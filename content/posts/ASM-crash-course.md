@@ -17,7 +17,7 @@ Computer architecture refers to the design and organization of the various compo
 
 Here is an example of the Von-Neumann Architecture which is basically used in every modern Computer:
 
-![von neumann](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Von_Neumann_Architecture.svg/800px-Von_Neumann_Architecture.svg.png)
+![von neumann](/media/neumann.svg)
 
 Now back on topic...
 
