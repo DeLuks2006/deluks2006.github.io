@@ -2,7 +2,7 @@
 Hey there! I'm DeLuks, the guy behind "Magic Bytes". Here's a bit about who I am and what you can expect from this blog:
 
 ## Who Am I?
-I'm just a nerd with a interest in Malware development, reverse engineering, cybersecurity and low level programming.
+I'm just a nerd with an interest in Malware development, reverse engineering, cybersecurity and low level programming.
 
 ## Why "Magic Bytes"?
 Magic Bytes was created out of my desire to share my experiences and discoveries while learning about malware development, reverse engineering, cybersecurity, etc.. Whether you're a fellow enthusiast or just curious about the stuff I write about, I hope you find something valuable here.
