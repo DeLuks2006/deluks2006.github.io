@@ -1,2 +1,2 @@
 # magic_bytes
-blog
+just a blog for my nerd stuff...
