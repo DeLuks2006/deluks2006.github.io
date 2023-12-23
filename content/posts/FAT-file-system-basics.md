@@ -3,18 +3,16 @@ title = 'FAT File System Basics'
 date = 2023-12-23T16:07:52+01:00
 draft = false
 +++
-Recently while trying to learn about computer viruses from the 20th century, I came to the conclusion that it is important to understand what the FAT file system is and how it works from a high level perspective. 
-
-### Introduction:
+Recently while trying to learn about computer viruses from the 20th century, I came to the conclusion that it is important to understand what the FAT file system is and how it works from a high level perspective.
+### What Is A File System:
 A file system is like the organizational backbone of your computer's storage. It is the software that manages how data is stored, retrieved, and organized on a storage device like a HDD or SSD. It is like the digital equivalent of storing books (the data) on shelves, where each book has its place, and a system that keeps track of where each one is located.
-
-#### Now Why is this so Important?
+#### Now Why Is This So Important?
 1. **Organization:** A file system organizes data into files and directories (or folders for the Windows users), making it easy for users and the computer to locate and manage information.
 2. **Data Retrieval:** A file system provides a structured way to retrieve data. When you want to open a file or run a program, the file system ensures the computer can find and access the file quickly.
 3. **Space Management:** It handles how data is stored physically on the storage device. This includes allocating space for new files, managing free space, and preventing data fragmentation.
 4. **Access Control:** Most file systems include permissions and security features. this means you can control who can and cannot access, modify, delete or execute your files.
 5. **Metadata:** Additionally file systems provide some information about files, known as metadata. This can include the files attributes, the time and date of creation and the last modification date.
-### What is FAT ??
+### What Is FAT ??
 All information about every file on disk is stored in 2 areas on disk called "directory" and the "File Allocation Table" (FAT). The "directory" contains a 32 byte file descriptor record for each file. This descriptor record contains the files name, size, and the creation time and date, and most importantly the file attribute, which contains important information for the OS on how it should handle the file. The FAT is basically a map of the entire disk, which informs the OS which areas are occupied by which files.
 
 ![image](/media/descriptor.png)
