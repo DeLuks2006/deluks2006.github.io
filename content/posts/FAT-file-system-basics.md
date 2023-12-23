@@ -42,4 +42,4 @@ doesn't have a specified volume size since its not a standalone file system
 Clusters are units of allocation on a storage device within a file system. When you save a file on a storage device, the file system doesn't allocate space on a byte-by-byte basis. instead it assigns space in clusters. Now a cluster is a group of sectors, which are the smallest physical storage units on a disk. 
 
 ### Conclusion
-I hope by the end of this blog you have a basic understanding what file systems are and a high level view on how the FAT file system works. Special thanks go to [lukflug](https://github.com/lukflug) for helping me understand how exactly the sub-directories are stored.
+I hope by the end of this blog you have a basic understanding what file systems are and a high level overview on how the FAT file system works. Special thanks goes to [lukflug](https://github.com/lukflug) for helping me understand how exactly the sub-directories are stored.
