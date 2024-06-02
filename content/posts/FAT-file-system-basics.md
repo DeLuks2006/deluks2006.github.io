@@ -25,14 +25,19 @@ The sub-directory file, as mentioned above consists of 32 byte records with the 
 ### Versions of FAT
 
 There is about 5 versions of the FAT file system though only 4 of them are commonly used. Here is a short summary of the important versions:
+
 FAT12:
 max. volume size of 32MB
+
 FAT16:
 max. volume size of 2GB
+
 FAT32:
 max. volume size of 2TB
+
 exFAT:
 theoretically up to 64ZB (zettabytes), but practical limits may vary
+
 VFAT:
 doesn't have a specified volume size since its not a standalone file system
 ### Now What Are Clusters?
