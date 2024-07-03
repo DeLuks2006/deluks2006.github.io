@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en-us"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="content-type" content="text/html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title itemprop="name">ELF Internals: Part I | Magic Bytes</title>
+<meta property="og:title" content="ELF Internals: Part I | Magic Bytes" />
+<meta name="twitter:title" content="ELF Internals: Part I | Magic Bytes" />
+<meta itemprop="name" content="ELF Internals: Part I | Magic Bytes" />
+<meta name="application-name" content="ELF Internals: Part I | Magic Bytes" />
+<meta property="og:site_name" content="Magic Bytes" />
+
+<meta name="description" content="Blog about IT and stuff">
+<meta itemprop="description" content="Blog about IT and stuff" />
+<meta property="og:description" content="Blog about IT and stuff" />
+<meta name="twitter:description" content="Blog about IT and stuff" />
+
+<meta property="og:locale" content="en-us" />
+<meta name="language" content="en-us" />
+
+  <link rel="alternate" hreflang="en-gb" href="http://localhost:1313/posts/the-elf-format/" title="English" />
+
+
+
+  <meta itemprop="image" content="http://localhost:1313/" />
+  <meta property="og:image" content="http://localhost:1313/" />
+  <meta name="twitter:image" content="http://localhost:1313/" />
+  <meta name="twitter:image:src" content="http://localhost:1313/" />
+
+
+
+
+    
+    
+    
+
+    <meta property="og:type" content="article" />
+    <meta property="og:article:published_time" content=2024-07-03T19:33:48&#43;0200 />
+    <meta property="article:published_time" content=2024-07-03T19:33:48&#43;0200 />
+
+    
+
+    
+
+    <script defer type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "Article",
+        "headline": "ELF Internals: Part I",
+        "author": {
+        "@type": "Person",
+        "name": ""
+        },
+        "datePublished": "2024-07-03",
+        "description": "",
+        "wordCount":  1347 ,
+        "mainEntityOfPage": "True",
+        "dateModified": "2024-07-03",
+        "image": {
+        "@type": "imageObject",
+        "url": ""
+        },
+        "publisher": {
+        "@type": "Organization",
+        "name": "Magic Bytes"
+        }
+    }
+    </script>
+
+
+<meta name="generator" content="Hugo 0.128.1">
+
+    
+
+    <link rel="canonical" href="http://localhost:1313/posts/the-elf-format/">
+    <link href="/style.min.d43bc6c79baa87f006efb2b92be952faeedeb1a3ab626c1d6abda52eae049355.css" rel="stylesheet">
+    <link href="/code-highlight.min.706d31975fec544a864cb7f0d847a73ea55ca1df91bf495fd12a177138d807cf.css" rel="stylesheet">
+
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+
+
+
+
+<link rel="manifest" href="http://localhost:1313/site.webmanifest">
+
+<meta name="msapplication-config" content="/browserconfig.xml">
+<meta name="msapplication-TileColor" content="#2d89ef">
+<meta name="theme-color" content="#434648">
+
+    
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
+
+    </head>
+<body data-theme = "dark" class="notransition">
+
+<script src="/js/theme.js"></script>
+
+<div class="navbar" role="navigation">
+    <nav class="menu" aria-label="Main Navigation">
+        <a href="http://localhost:1313/" class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" 
+viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+stroke-linejoin="round" class="feather feather-home">
+<title>Home</title>
+<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+<polyline points="9 22 9 12 15 12 15 22"></polyline>
+</svg>
+        </a>
+        <input type="checkbox" id="menu-trigger" class="menu-trigger" />
+        <label for="menu-trigger">
+            <span class="menu-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" stroke="currentColor" fill="none" viewBox="0 0 14 14"><title>Menu</title><path stroke-linecap="round" stroke-linejoin="round" d="M10.595 7L3.40726 7"></path><path stroke-linecap="round" stroke-linejoin="round" d="M10.5096 3.51488L3.49301 3.51488"></path><path stroke-linecap="round" stroke-linejoin="round" d="M10.5096 10.4851H3.49301"></path><path stroke-linecap="round" stroke-linejoin="round" d="M0.5 12.5V1.5C0.5 0.947715 0.947715 0.5 1.5 0.5H12.5C13.0523 0.5 13.5 0.947715 13.5 1.5V12.5C13.5 13.0523 13.0523 13.5 12.5 13.5H1.5C0.947715 13.5 0.5 13.0523 0.5 12.5Z"></path></svg>
+            </span>
+        </label>
+
+        <div class="trigger">
+            <ul class="trigger-container">
+                
+                
+                <li>
+                    <a class="menu-link " href="/">
+                        Home
+                    </a>
+                    
+                </li>
+                
+                <li>
+                    <a class="menu-link active" href="/posts/">
+                        Posts
+                    </a>
+                    
+                </li>
+                
+                <li>
+                    <a class="menu-link " href="/about/">
+                        About
+                    </a>
+                    
+                </li>
+                
+                <li class="menu-separator">
+                    <span>|</span>
+                </li>
+                
+                
+            </ul>
+            <a id="mode" href="#">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mode-sunny" width="21" height="21" viewBox="0 0 14 14" stroke-width="1">
+<title>LIGHT</title><g><circle cx="7" cy="7" r="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></circle><line x1="7" y1="0.5" x2="7" y2="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="2.4" y1="2.4" x2="3.82" y2="3.82" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="0.5" y1="7" x2="2.5" y2="7" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="2.4" y1="11.6" x2="3.82" y2="10.18" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="7" y1="13.5" x2="7" y2="11.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="11.6" y1="11.6" x2="10.18" y2="10.18" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="13.5" y1="7" x2="11.5" y2="7" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="11.6" y1="2.4" x2="10.18" y2="3.82" fill="none" stroke-linecap="round" stroke-linejoin="round"></line></g></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="mode-moon" width="21" height="21" viewBox="0 0 14 14" stroke-width="1">
+<title>DARK</title><g><circle cx="7" cy="7" r="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></circle><line x1="7" y1="0.5" x2="7" y2="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="2.4" y1="2.4" x2="3.82" y2="3.82" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="0.5" y1="7" x2="2.5" y2="7" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="2.4" y1="11.6" x2="3.82" y2="10.18" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="7" y1="13.5" x2="7" y2="11.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="11.6" y1="11.6" x2="10.18" y2="10.18" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="13.5" y1="7" x2="11.5" y2="7" fill="none" stroke-linecap="round" stroke-linejoin="round"></line><line x1="11.6" y1="2.4" x2="10.18" y2="3.82" fill="none" stroke-linecap="round" stroke-linejoin="round"></line></g></svg>
+            </a>
+        </div>
+    </nav>
+</div>
+
+<div class="wrapper post">
+    <main class="page-content" aria-label="Content">
+        <article>
+            <header class="header">
+                <h1 class="header-title">ELF Internals: Part I</h1>
+                
+                
+                <div class="post-meta">
+                    <time datetime="2024-07-03T19:33:48&#43;02:00" itemprop="datePublished"> 3 Jul 2024 </time>
+                </div>
+                
+            </header>
+            
+    
+    <details class="toc" ZgotmplZ>
+        <summary><b>Table of Contents</b></summary>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#so-why-should-anyone-care">So why should <em>anyone</em> care?</a>
+      <ul>
+        <li><a href="#malware">Malware</a></li>
+        <li><a href="#binary-golfing">Binary Golfing</a></li>
+        <li><a href="#compatibilty">Compatibilty</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#the-elf-header">The ELF Header</a></li>
+  </ul>
+</nav>
+    </details>
+            <div class="page-content">
+                <p>So&hellip; You wanna learn something about those weird Linux executables known as ELFs? Well you are in luck, me too!
+I&rsquo;ve taken it upon me to seek around the dark dusty corners of the world wide webs to learn about those ELFs so
+you do not have to look as much and <em>maybe</em> help you out!</p>
+<p>But beware young traveler I am learning with you, so there may be some mistakes.</p>
+<h1 id="part-i-what-in-the-great-heavens-is-an-elf">Part I: What in the Great Heavens is an ELF</h1>
+<p>First off&hellip; No its not a elve!</p>
+<p>ELF stands for <em>Executable and Linkable Format</em>, and simply put, its just a File Format commonly used on the *UNIX
+operating systems for&hellip; well plain ol&rsquo; executables but also for other stuff like kernel modules (.ko), shared libaries (.so)
+and even core dumps (.core)!</p>
+<h2 id="so-why-should-anyone-care">So why should <em>anyone</em> care?</h2>
+<p>Well, there are several reasons why one would want to learn more about the ELFs&hellip; Here are a few (which I can think of):</p>
+<h3 id="malware">Malware</h3>
+<p>Whether you are analysing or developing mischevious computer software, you the analyist or developer should know at least the
+basics of the ELF! Why??? Because I said so. Aaand also because for example as the developer you could make the analyists life
+a nightmare by modifying some silly bytes to confuse the disassemblers/decompilers, or as the analyist you may want to know the</p>
+<p>evil tricks of the developer to find out his actual intents while reverse engineering. Or if you are like me and think viruses and
+file infectors are cool you probably need to know about ELFs to properly write a infector/virus.</p>
+<h3 id="binary-golfing">Binary Golfing</h3>
+<p>Ahh so you wanna be part of the cool kids club, ey? Well knowing the ELF structure helps <strong>a lot</strong> when trying to make your silly
+little binary as small and cute as possible. The standard ELF loader on Linux does not care all that much about your binaries
+header integrity as we will see later!</p>
+<h3 id="compatibilty">Compatibilty</h3>
+<p>Maybe you are the big brained fella that wants to create his own operating system and want to use the good ol&rsquo; ELF as the standard for
+your executables or you just want to <em>somehow</em> port the ELF to some other weird operating system, like&hellip; I don&rsquo;t know&hellip; Windows???</p>
+<p><strong>(dont get any stupid ideas&hellip;)</strong></p>
+<h1 id="part-ii-let-the-horrors-begin">Part II: Let the horrors begin!</h1>
+<p>The ELF consists of 6 main parts:</p>
+<ul>
+<li>The ELF header</li>
+<li>Program headers (table)</li>
+<li>Section headers (table)</li>
+<li>Sections</li>
+<li>Symbols</li>
+<li>Relocation</li>
+</ul>
+<p>Now&hellip; Before diving in, lets first create a small binary to have a nice little example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">printf</span><span class="p">(</span><span class="s">&#34;Hello World!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Now&hellip; hexdump that sucka (or whatever you use) and let&rsquo;s begin!</p>
+<h2 id="the-elf-header">The ELF Header</h2>
+<p>The good old ELF header consists of 14 little parts, and those tiny parts contain some very important data, let us take a deeper look.</p>
+<p>The ELF header is defined like so: [1]</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">e_ident</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint16_t</span>      <span class="n">e_type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint16_t</span>      <span class="n">e_machine</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint32_t</span>      <span class="n">e_version</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ElfN_Addr</span>     <span class="n">e_entry</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ElfN_Off</span>      <span class="n">e_phoff</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ElfN_Off</span>      <span class="n">e_shoff</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint32_t</span>      <span class="n">e_flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint16_t</span>      <span class="n">e_ehsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint16_t</span>      <span class="n">e_phentsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint16_t</span>      <span class="n">e_phnum</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint16_t</span>      <span class="n">e_shentsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint16_t</span>      <span class="n">e_shnum</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint16_t</span>      <span class="n">e_shstrndx</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">ElfN_Ehdr</span><span class="p">;</span>
+</span></span></code></pre></div><p>now lets see what each member does:</p>
+<p>starting off with <code>e_ident</code>, it&rsquo;s a kind of a weird combo of multiple
+significant bytes so lets try to not get confused here&hellip;</p>
+<p>we will use the hexdump output as reference:
+<code>7f 45 4c 46 02 01 01 00  00 00 00 00 00 00 00 00</code> &lt;- example
+<code>7f 45 4c 46 __ __ __ __  __ __ __ __ __ __ __ __</code> &lt;- &ldquo;__&rdquo; means the loader don&rsquo;t care</p>
+<p>(for more info about golfing and learning about what the loader ignores id check out blogs [1][2])</p>
+<p>lets start with the magic bytes <code>7f 45 4c 46</code> or just <code> ELF</code>, this one just
+tells us that its a ELF binary, without it, the loader and other stuff will
+refuse the binary. Next up, we have the byte after our magic, it tells us in
+which format the binary is, so for 32bit executables we have the value <code>01</code> and
+for 64bit executables we have the value <code>02</code>. After that comes the byte that signifies
+the endianess of the binary, <code>01</code> being little endian and <code>02</code> being big endian. Finally
+we have the version of the ELF which is (almost) always <code>01</code>.
+Next we got 2 bytes that are not usually used (at least in the case of my compiler), the first one
+signifies for which OS the binary was compiled for, for example Linux would be <code>03</code> and OpenBSD would be <code>0c</code>,
+and the latter signifies the version of the OS (also not used anymore after Linux kernel version 2.6)
+Aaaand finally, we have some padding bytes, used for&hellip; well padding.</p>
+<p><code>02 00 3e 00 01 00 00 00  00 10 40 00 00 00 00 00</code>
+<code>02 00 3e 00 __ __ __ __  00 10 40 00 00 00 00 00</code></p>
+<p>next up we have the <code>e_type</code> member signifying the file type of our binary, <code>02</code> meaning a executables, <code>03</code> meaning a shared object
+and etc. Annd after that we got <code>e_machine</code> specifying the instruction set, this one can be left out.
+Then we have the <code>e_version</code>, that is 4 bytes long, specifying the version of the ELF (again??). And Finally
+we have the <code>e_entry</code> that just contains the entry point of our file, in this case it is <code>0x0000000000401000</code> or just <code>0x401000</code></p>
+<p><code>40 00 00 00 00 00 00 00  10 21 00 00 00 00 00 00</code>
+<code>40 00 00 00 00 00 00 00  __ __ __ __ __ __ __ __</code></p>
+<p>on to the 3rd line of the dump, we got the <code>e_phoff</code> or Program Header Offset, is a 8 byte chonk
+and a pointer to the program header table. And since it usually just follows after the ELF header
+its most of the time at the offset <code>0x40</code> on 64bit. Next we have another chonk, the <code>e_shoff</code>,
+this is just a pointer to the Section Header table.</p>
+<p><code>00 00 00 00 40 00 38 00  03 00 40 00 06 00 05 00</code>
+<code>__ __ __ __ 40 00 38 00  03 00 __ __ __ __ __ __</code></p>
+<p>Now here the first 4 bytes are architecture specific and belong to the member <code>e_flags</code>. Next up we have the <code>e_ehsize</code>
+which is 2 bytes that just say how big the ELF header is.</p>
+<p>After that we got the <code>e_phentsize</code> member, this one is also 2 bytes and contains the size of &ldquo;each&rdquo; program header entry,
+this is most likely gonna be <code>0x38</code> on 64bit. Right after that we have the number of entries in the program header table (also 2 bytes).</p>
+<p>And for the section header table we have the members <code>e_shentsize</code>, <code>e_shnum</code> and <code>e_shstrndx</code> representing the section header
+entry size, the number of section header entries and the index of the of the section header table entry that contains the section
+names respectfully.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>So this is it for the first part of the small series I plan to do on the ELF file format. I hope I did not bore you
+too much! In the next parts we will cover the program headers and the section headers so be sure to check this site
+again after a few days.. or weeks&hellip; or months. While you wait, I have left you a little assignment you can do to
+directly use the knowledge you learned today so it helps ya memorise it! ))</p>
+<blockquote>
+<p>P.S. I&rsquo;ll try my best to make the next post not as boring as this one ))</p>
+</blockquote>
+<blockquote>
+<p>P.P.S. If you find anything in this article that is not correct be sure to DM me on discord at &ldquo;deluks.&rdquo;</p>
+</blockquote>
+<h1 id="assignment">ASSIGNMENT:</h1>
+<blockquote>
+<p>Pick any language you want and write a simple ELF header parser, keep in mind we will be expanding this as we go.
+I will be using C and you will see my solution in the next post!</p>
+</blockquote>
+<h1 id="references">References</h1>
+<p>[0] <a href="https://en.wikipedia.org/wiki/Executable_and_Linkable_Format">https://en.wikipedia.org/wiki/Executable_and_Linkable_Format</a></p>
+<p>[1] <a href="https://tmpout.sh/1/1.html">https://tmpout.sh/1/1.html</a> *</p>
+<p>[2] <a href="https://n0.lol/ebm/">https://n0.lol/ebm/</a> *</p>
+<p>[3] <a href="https://www.man7.org/linux/man-pages/man5/elf.5.html">https://www.man7.org/linux/man-pages/man5/elf.5.html</a></p>
+<p>* be sure to check these awesome posts out, the authors are extremely talented and explain their topics very well!</p>
+
+            </div>
+        </article></main>
+</div>
+<footer class="footer">
+    <span class="footer_item"> </span>
+    &nbsp;
+
+    <div class="footer_social-icons">
+<a href="https://github.com/DeLuks2006" target="_blank" rel="noopener noreferrer me"
+    title="Github">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round">
+    <path
+        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+    </path>
+</svg>
+</a>
+<a href="index.xml" target="_blank" rel="noopener noreferrer me"
+    title="Rss">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 11a9 9 0 0 1 9 9" />
+    <path d="M4 4a16 16 0 0 1 16 16" />
+    <circle cx="5" cy="19" r="1" />
+</svg>
+</a>
+</div>
+    <small class="footer_copyright">
+        © 2024 DeLuks.
+        Powered by <a href="https://github.com/hugo-sid/hugo-blog-awesome" target="_blank" rel="noopener">Hugo blog awesome</a>.
+    </small>
+</footer><a href="#" title="Go to top" id="totop">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" stroke="currentColor" viewBox="0 96 960 960">
+    <path d="M283 704.739 234.261 656 480 410.261 725.739 656 677 704.739l-197-197-197 197Z"/>
+</svg>
+
+</a>
+
+
+    
+
+
+
+
+    
+    
+        
+    
+
+    
+    
+        
+    
+
+
+
+    
+    <script async src="http://localhost:1313/js/main.js" ></script>
+
+    
+
+</body>
+</html>

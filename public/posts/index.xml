@@ -2,25 +2,34 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Magic Bytes</title>
-    <link>https://example.org/posts/</link>
+    <link>http://localhost:1313/posts/</link>
     <description>Recent content in Posts on Magic Bytes</description>
-    <generator>Hugo</generator>
+    <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 03 Jul 2024 19:33:48 +0200</lastBuildDate>
-    <atom:link href="https://example.org/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 03 Jul 2024 19:33:48 +0200</lastBuildDate><atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>The ELF Format</title>
-      <link>https://example.org/posts/the-elf-format/</link>
+      <title>ELF Internals: Part I</title>
+      <link>http://localhost:1313/posts/the-elf-format/</link>
       <pubDate>Wed, 03 Jul 2024 19:33:48 +0200</pubDate>
-      <guid>https://example.org/posts/the-elf-format/</guid>
-      <description>So&amp;hellip; You wanna learn something about those weird Linux executables known as ELFs? Well you are in luck, me too! I&amp;rsquo;ve taken it upon me to seek around the dark dusty corners of the world wide webs to learn about those ELFs so you do not have to look as much and maybe help you out!&#xA;But beware young traveler I am learning with you, so there may be some mistakes.</description>
+      
+      <guid>http://localhost:1313/posts/the-elf-format/</guid>
+      
+      <description>So&amp;hellip; You wanna learn something about those weird Linux executables known as ELFs? Well you are in luck, me too! I&amp;rsquo;ve taken it upon me to seek around the dark dusty corners of the world wide webs to learn about those ELFs so you do not have to look as much and maybe help you out!
+But beware young traveler I am learning with you, so there may be some mistakes.</description>
+      
     </item>
+    
     <item>
       <title>FAT File System Basics</title>
-      <link>https://example.org/posts/fat-file-system-basics/</link>
+      <link>http://localhost:1313/posts/fat-file-system-basics/</link>
       <pubDate>Sat, 23 Dec 2023 16:07:52 +0100</pubDate>
-      <guid>https://example.org/posts/fat-file-system-basics/</guid>
-      <description>Recently while trying to learn about computer viruses from the 20th century, I came to the conclusion that it is important to understand what the FAT file system is and how it works from a high level perspective.&#xA;What Is A File System: A file system is like the organizational backbone of your computer&amp;rsquo;s storage. It is the software that manages how data is stored, retrieved, and organized on a storage device like a HDD or SSD.</description>
+      
+      <guid>http://localhost:1313/posts/fat-file-system-basics/</guid>
+      
+      <description>Recently while trying to learn about computer viruses from the 20th century, I came to the conclusion that it is important to understand what the FAT file system is and how it works from a high level perspective.
+What Is A File System: A file system is like the organizational backbone of your computer&amp;rsquo;s storage. It is the software that manages how data is stored, retrieved, and organized on a storage device like a HDD or SSD.</description>
+      
     </item>
+    
   </channel>
 </rss>

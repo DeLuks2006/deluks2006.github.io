@@ -3,11 +3,11 @@
 <meta http-equiv="content-type" content="text/html">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title itemprop="name">Tags | Magic Bytes</title>
-<meta property="og:title" content="Tags | Magic Bytes" />
-<meta name="twitter:title" content="Tags | Magic Bytes" />
-<meta itemprop="name" content="Tags | Magic Bytes" />
-<meta name="application-name" content="Tags | Magic Bytes" />
+<title itemprop="name">FAT File System Basics | Magic Bytes</title>
+<meta property="og:title" content="FAT File System Basics | Magic Bytes" />
+<meta name="twitter:title" content="FAT File System Basics | Magic Bytes" />
+<meta itemprop="name" content="FAT File System Basics | Magic Bytes" />
+<meta name="application-name" content="FAT File System Basics | Magic Bytes" />
 <meta property="og:site_name" content="Magic Bytes" />
 
 <meta name="description" content="Blog about IT and stuff">
@@ -18,7 +18,7 @@
 <meta property="og:locale" content="en-us" />
 <meta name="language" content="en-us" />
 
-  <link rel="alternate" hreflang="en-gb" href="http://localhost:1313/tags/" title="English" />
+  <link rel="alternate" hreflang="en-gb" href="http://localhost:1313/posts/fat-file-system-basics/" title="English" />
 
 
 
@@ -30,14 +30,49 @@
 
 
 
+    
+    
+    
+
+    <meta property="og:type" content="article" />
+    <meta property="og:article:published_time" content=2023-12-23T16:07:52&#43;0100 />
+    <meta property="article:published_time" content=2023-12-23T16:07:52&#43;0100 />
+
+    
+
+    
+
+    <script defer type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "Article",
+        "headline": "FAT File System Basics",
+        "author": {
+        "@type": "Person",
+        "name": ""
+        },
+        "datePublished": "2023-12-23",
+        "description": "",
+        "wordCount":  705 ,
+        "mainEntityOfPage": "True",
+        "dateModified": "2023-12-23",
+        "image": {
+        "@type": "imageObject",
+        "url": ""
+        },
+        "publisher": {
+        "@type": "Organization",
+        "name": "Magic Bytes"
+        }
+    }
+    </script>
+
 
 <meta name="generator" content="Hugo 0.128.1">
 
     
 
-    <link rel="canonical" href="http://localhost:1313/tags/">
-    <link href="/tags/index.xml" rel="alternate" type="application/rss+xml" title="Magic Bytes">
-    <link href="/tags/index.xml" rel="feed" type="application/rss+xml" title="Magic Bytes">
+    <link rel="canonical" href="http://localhost:1313/posts/fat-file-system-basics/">
     <link href="/style.min.d43bc6c79baa87f006efb2b92be952faeedeb1a3ab626c1d6abda52eae049355.css" rel="stylesheet">
     <link href="/code-highlight.min.706d31975fec544a864cb7f0d847a73ea55ca1df91bf495fd12a177138d807cf.css" rel="stylesheet">
 
@@ -95,7 +130,7 @@ stroke-linejoin="round" class="feather feather-home">
                 </li>
                 
                 <li>
-                    <a class="menu-link " href="/posts/">
+                    <a class="menu-link active" href="/posts/">
                         Posts
                     </a>
                     
@@ -123,15 +158,80 @@ stroke-linejoin="round" class="feather feather-home">
         </div>
     </nav>
 </div>
-<div class="wrapper list-page">
-    <header class="header">
-        <h1 class="header-title center">Tags</h1>
-    </header>
-    <main class="page-content" aria-label="Content">
-         
 
-    </main>
-</div><footer class="footer">
+<div class="wrapper post">
+    <main class="page-content" aria-label="Content">
+        <article>
+            <header class="header">
+                <h1 class="header-title">FAT File System Basics</h1>
+                
+                
+                <div class="post-meta">
+                    <time datetime="2023-12-23T16:07:52&#43;01:00" itemprop="datePublished"> 23 Dec 2023 </time>
+                </div>
+                
+            </header>
+            
+    
+    <details class="toc" ZgotmplZ>
+        <summary><b>Table of Contents</b></summary>
+        <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#what-is-a-file-system">What Is A File System:</a>
+          <ul>
+            <li><a href="#now-why-is-this-so-important">Now Why Is This So Important?</a></li>
+          </ul>
+        </li>
+        <li><a href="#what-is-fat-">What Is FAT ??</a></li>
+        <li><a href="#versions-of-fat">Versions of FAT</a></li>
+        <li><a href="#now-what-are-clusters">Now What Are Clusters?</a></li>
+        <li><a href="#conclusion">Conclusion</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </details>
+            <div class="page-content">
+                <p>Recently while trying to learn about computer viruses from the 20th century, I came to the conclusion that it is important to understand what the FAT file system is and how it works from a high level perspective.</p>
+<h3 id="what-is-a-file-system">What Is A File System:</h3>
+<p>A file system is like the organizational backbone of your computer&rsquo;s storage. It is the software that manages how data is stored, retrieved, and organized on a storage device like a HDD or SSD. It is like the digital equivalent of storing books (the data) on shelves, where each book has its place, and a system that keeps track of where each one is located.</p>
+<h4 id="now-why-is-this-so-important">Now Why Is This So Important?</h4>
+<ol>
+<li><strong>Organization:</strong> A file system organizes data into files and directories (or folders for the Windows users), making it easy for users and the computer to locate and manage information.</li>
+<li><strong>Data Retrieval:</strong> A file system provides a structured way to retrieve data. When you want to open a file or run a program, the file system ensures the computer can find and access the file quickly.</li>
+<li><strong>Space Management:</strong> It handles how data is stored physically on the storage device. This includes allocating space for new files, managing free space, and preventing data fragmentation.</li>
+<li><strong>Access Control:</strong> Most file systems include permissions and security features. this means you can control who can and cannot access, modify, delete or execute your files.</li>
+<li><strong>Metadata:</strong> Additionally file systems provide some information about files, known as metadata. This can include the files attributes, the time and date of creation and the last modification date.</li>
+</ol>
+<h3 id="what-is-fat-">What Is FAT ??</h3>
+<p>All information about every file on disk is stored in 2 areas on disk called &ldquo;directory&rdquo; and the &ldquo;File Allocation Table&rdquo; (FAT). The &ldquo;directory&rdquo; contains a 32 byte file descriptor record for each file. This descriptor record contains the files name, size, and the creation time and date, and most importantly the file attribute, which contains important information for the OS on how it should handle the file. The FAT is basically a map of the entire disk, which informs the OS which areas are occupied by which files.</p>
+<p><img alt="image" src="/media/descriptor.png"></p>
+<p>Each disk has 2 FAT&rsquo;s (one is for backup). But A disk may also have directories. One directory known as the <em>root directory</em>, is present on every disk, but the root may habe multiple <em>sub-directories</em>, nested one inside of each other to form a tree structure. These sub-directories can be used, created, removed and modified by the user. Therefore the structure can be as simple and as complex as the user makes it.</p>
+<p>Both FAT and the root-directory are located in a fixed area on the disk. Interestingly the sub-directories are stored similarly to files, the entry in the parent directory has the &ldquo;directory&rdquo; attribute and the content of it is an array of directory entries. The OS handles the sub-directory entry in a completely different way than other files, to make it look like a directory, and not just another file.</p>
+<p>The sub-directory file, as mentioned above consists of 32 byte records with the attribute set to directory, which means that the file it refers to is a sub-directory of a sub-directory.</p>
+<h3 id="versions-of-fat">Versions of FAT</h3>
+<p>There is about 5 versions of the FAT file system though only 4 of them are commonly used. Here is a short summary of the important versions:</p>
+<p>FAT12:
+max. volume size of 32MB</p>
+<p>FAT16:
+max. volume size of 2GB</p>
+<p>FAT32:
+max. volume size of 2TB</p>
+<p>exFAT:
+theoretically up to 64ZB (zettabytes), but practical limits may vary</p>
+<p>VFAT:
+doesn&rsquo;t have a specified volume size since its not a standalone file system</p>
+<h3 id="now-what-are-clusters">Now What Are Clusters?</h3>
+<p>Clusters are units of allocation on a storage device within a file system. When you save a file on a storage device, the file system doesn&rsquo;t allocate space on a byte-by-byte basis. instead it assigns space in clusters. Now a cluster is a group of sectors, which are the smallest physical storage units on a disk.</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>I hope by the end of this blog you have a basic understanding what file systems are and a high level overview on how the FAT file system works. Special thanks goes to <a href="https://github.com/lukflug">lukflug</a> for helping me understand how exactly the sub-directories are stored.</p>
+
+            </div>
+        </article></main>
+</div>
+<footer class="footer">
     <span class="footer_item"> </span>
     &nbsp;
 

@@ -1,7 +1,7 @@
 +++
-title = 'The ELF Format'
+title = 'ELF Internals: Part I'
 date = 2024-07-03T19:33:48+02:00
-draft = true
+draft = false
 +++
 So... You wanna learn something about those weird Linux executables known as ELFs? Well you are in luck, me too!
 I've taken it upon me to seek around the dark dusty corners of the world wide webs to learn about those ELFs so 
@@ -26,6 +26,7 @@ Well, there are several reasons why one would want to learn more about the ELFs.
 Whether you are analysing or developing mischevious computer software, you the analyist or developer should know at least the 
 basics of the ELF! Why??? Because I said so. Aaand also because for example as the developer you could make the analyists life 
 a nightmare by modifying some silly bytes to confuse the disassemblers/decompilers, or as the analyist you may want to know the 
+
 evil tricks of the developer to find out his actual intents while reverse engineering. Or if you are like me and think viruses and 
 file infectors are cool you probably need to know about ELFs to properly write a infector/virus. 
 
@@ -39,6 +40,7 @@ header integrity as we will see later!
 
 Maybe you are the big brained fella that wants to create his own operating system and want to use the good ol' ELF as the standard for 
 your executables or you just want to *somehow* port the ELF to some other weird operating system, like... I don't know... Windows??? 
+
 **(dont get any stupid ideas...)**
 
 # Part II: Let the horrors begin!
@@ -69,9 +71,8 @@ Now... hexdump that sucka (or whatever you use) and let's begin!
 
 The good old ELF header consists of 14 little parts, and those tiny parts contain some very important data, let us take a deeper look.
 
-The ELF header is defined like so:
+The ELF header is defined like so: \[1]
 
-\[1]
 ```c 
 typedef struct {
     unsigned char e_ident[16];
@@ -98,7 +99,7 @@ significant bytes so lets try to not get confused here...
 
 we will use the hexdump output as reference:
 `7f 45 4c 46 02 01 01 00  00 00 00 00 00 00 00 00` <- example
-`7f 45 4c 46 __ __ __ __  __ __ __ __ __ __ __ __` <- "__" means the loader doesnt care
+`7f 45 4c 46 __ __ __ __  __ __ __ __ __ __ __ __` <- "__" means the loader don't care
 
 (for more info about golfing and learning about what the loader ignores id check out blogs \[1]\[2])
 
@@ -151,6 +152,7 @@ again after a few days.. or weeks... or months. While you wait, I have left you 
 directly use the knowledge you learned today so it helps ya memorise it! ))
 
 > P.S. I'll try my best to make the next post not as boring as this one ))
+
 > P.P.S. If you find anything in this article that is not correct be sure to DM me on discord at "deluks."
 
 # ASSIGNMENT:
@@ -161,8 +163,11 @@ directly use the knowledge you learned today so it helps ya memorise it! ))
 # References
 
 \[0] https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
+
 \[1] https://tmpout.sh/1/1.html *
+
 \[2] https://n0.lol/ebm/ *
+
 \[3] https://www.man7.org/linux/man-pages/man5/elf.5.html
 
 \* be sure to check these awesome posts out, the authors are extremely talented and explain their topics very well!
