@@ -110,7 +110,7 @@ which format the binary is, so for 32bit executables we have the value `01` and
 for 64bit executables we have the value `02`. After that comes the byte that signifies
 the endianess of the binary, `01` being little endian and `02` being big endian. Finally
 we have the version of the ELF which is (almost) always `01`.
-Next we got 2 bytes that are not usually used (at least in the case of my compiler), the first one 
+Next we got 2 bytes that are not usually used *automatically*, the first one 
 signifies for which OS the binary was compiled for, for example Linux would be `03` and OpenBSD would be `0c`,
 and the latter signifies the version of the OS (also not used anymore after Linux kernel version 2.6)
 Aaaand finally, we have some padding bytes, used for... well padding.
