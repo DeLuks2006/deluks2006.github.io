@@ -6,7 +6,25 @@
     <description>Recent content in Posts on Magic Bytes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 03 Jul 2024 19:33:48 +0200</lastBuildDate><atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 21 Sep 2024 22:39:03 +0200</lastBuildDate><atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Ultima Analysis</title>
+      <link>http://localhost:1313/posts/ultima-analysis/</link>
+      <pubDate>Sat, 21 Sep 2024 22:39:03 +0200</pubDate>
+      
+      <guid>http://localhost:1313/posts/ultima-analysis/</guid>
+      
+      <description>&lt;p&gt;So, ya boi is back with yet another of his geeky interests. This time we are
+gonna be taking a look at a sample made by &lt;a href=&#34;https://github.com/cr-0w&#34;&gt;crow&lt;/a&gt;
+called &amp;ldquo;ultima&amp;rdquo;, it is apparently a easy reversing challenge for new malware
+analysts like me, so without further a do, lets get started taking this chunk
+of bytes apart!!&lt;/p&gt;
+&lt;h1 id=&#34;basic-info-and-analysis&#34;&gt;Basic Info and Analysis&lt;/h1&gt;
+&lt;p&gt;To start, let&amp;rsquo;s throw this sucka into PE-Bear and get some basic info about the
+sample:&lt;/p&gt;</description>
+      
+    </item>
+    
     <item>
       <title>ELF Internals: Part I</title>
       <link>http://localhost:1313/posts/the-elf-format/</link>
@@ -14,8 +32,10 @@
       
       <guid>http://localhost:1313/posts/the-elf-format/</guid>
       
-      <description>So&amp;hellip; You wanna learn something about those weird Linux executables known as ELFs? Well you are in luck, me too! I&amp;rsquo;ve taken it upon me to seek around the dark dusty corners of the world wide webs to learn about those ELFs so you do not have to look as much and maybe help you out!
-But beware young traveler I am learning with you, so there may be some mistakes.</description>
+      <description>&lt;p&gt;So&amp;hellip; You wanna learn something about those weird Linux executables known as ELFs? Well you are in luck, me too!
+I&amp;rsquo;ve taken it upon me to seek around the dark dusty corners of the world wide webs to learn about those ELFs so
+you do not have to look as much and &lt;em&gt;maybe&lt;/em&gt; help you out!&lt;/p&gt;
+&lt;p&gt;But beware young traveler I am learning with you, so there may be some mistakes.&lt;/p&gt;</description>
       
     </item>
     
@@ -26,8 +46,9 @@ But beware young traveler I am learning with you, so there may be some mistakes.
       
       <guid>http://localhost:1313/posts/fat-file-system-basics/</guid>
       
-      <description>Recently while trying to learn about computer viruses from the 20th century, I came to the conclusion that it is important to understand what the FAT file system is and how it works from a high level perspective.
-What Is A File System: A file system is like the organizational backbone of your computer&amp;rsquo;s storage. It is the software that manages how data is stored, retrieved, and organized on a storage device like a HDD or SSD.</description>
+      <description>&lt;p&gt;Recently while trying to learn about computer viruses from the 20th century, I came to the conclusion that it is important to understand what the FAT file system is and how it works from a high level perspective.&lt;/p&gt;
+&lt;h3 id=&#34;what-is-a-file-system&#34;&gt;What Is A File System:&lt;/h3&gt;
+&lt;p&gt;A file system is like the organizational backbone of your computer&amp;rsquo;s storage. It is the software that manages how data is stored, retrieved, and organized on a storage device like a HDD or SSD. It is like the digital equivalent of storing books (the data) on shelves, where each book has its place, and a system that keeps track of where each one is located.&lt;/p&gt;</description>
       
     </item>
     

@@ -53,7 +53,7 @@
         },
         "datePublished": "2024-07-03",
         "description": "",
-        "wordCount":  1347 ,
+        "wordCount":  1340 ,
         "mainEntityOfPage": "True",
         "dateModified": "2024-07-03",
         "image": {
@@ -68,7 +68,7 @@
     </script>
 
 
-<meta name="generator" content="Hugo 0.128.1">
+<meta name="generator" content="Hugo 0.134.3">
 
     
 
@@ -268,7 +268,7 @@ which format the binary is, so for 32bit executables we have the value <code>01<
 for 64bit executables we have the value <code>02</code>. After that comes the byte that signifies
 the endianess of the binary, <code>01</code> being little endian and <code>02</code> being big endian. Finally
 we have the version of the ELF which is (almost) always <code>01</code>.
-Next we got 2 bytes that are not usually used (at least in the case of my compiler), the first one
+Next we got 2 bytes that are not usually used <em>automatically</em>, the first one
 signifies for which OS the binary was compiled for, for example Linux would be <code>03</code> and OpenBSD would be <code>0c</code>,
 and the latter signifies the version of the OS (also not used anymore after Linux kernel version 2.6)
 Aaaand finally, we have some padding bytes, used for&hellip; well padding.</p>

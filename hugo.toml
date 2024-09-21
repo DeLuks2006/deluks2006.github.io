@@ -101,3 +101,6 @@ url = "https://github.com/DeLuks2006"
 [[params.socialIcons]]
 name = "Rss"
 url = "index.xml"
+
+[params]
+goToTop = true
