@@ -158,7 +158,7 @@ directly use the knowledge you learned today so it helps ya memorise it! ))
 # ASSIGNMENT:
 
 > Pick any language you want and write a simple ELF header parser, keep in mind we will be expanding this as we go.
-> I will be using C and you will see my solution in the next post!
+> I will be using C and you will see my solution in the last post of the series!
 
 # References
 
