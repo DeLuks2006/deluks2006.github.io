@@ -163,8 +163,8 @@ section and the entry size of an section assuming it contains fixed-size entries
 
 Simply put, sections are used for organization and contain specific data types 
 used by the linker. On the other hand segments define how the program is loaded 
-into memory and  may contain multiple sections. For example the an segment may
-contain both the .text an .data section.
+into memory and  may contain multiple sections. For example a segment may
+contain both the .text and .data section.
 
 Now coming back to this, the mess makes a bunch more sense, sure the formatting
 of the output is a little weird but we see all the members of the `ElfN_Shdr`
