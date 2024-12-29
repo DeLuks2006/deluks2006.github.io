@@ -1,5 +1,5 @@
 +++
-title = 'ELF Internals: Part I'
+title = 'ELF Internals - Part I: The ELF Header'
 date = 2024-07-03T19:33:48+02:00
 draft = false
 +++
