@@ -5,7 +5,7 @@ draft = false
 +++
 
 After the ELF and Program Headers we have the section headers. This knowledge 
-is, again, essential for reverse engineering, aswell as malware development. 
+is, again, essential for reverse engineering, as well as malware development. 
 So without wasting any time, let's jump straight into it.
 
 ## What Is A Section?
