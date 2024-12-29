@@ -93,7 +93,7 @@ typedef struct {
 Now, basically all we have to do is get the offset and cast it to this very 
 cool structure called `ElfN_Shdr`, where `N` is either "32" or "64" depending
 on if we are on a 32-bit or a 64-bit system respectively. (For this blog post 
-we are talking a look at the 64-bit version.)
+we are taking a look at the 64-bit version.)
 
 ### How Is The Structure Defined?
 
