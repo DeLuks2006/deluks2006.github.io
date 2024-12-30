@@ -222,7 +222,8 @@ Section Headers:
 
 That's all for today folks, I hope you learned something new about ELFs and also 
 hope I did not bore you too much! The next part covers the ELF symbols so stay 
-tuned. Huge thanks to bextr
+tuned. Huge thanks to [bextr](https://x.com/_vrzh) for the feedback while writing 
+this post.
 
 ### Assignment
 
