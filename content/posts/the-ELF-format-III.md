@@ -4,28 +4,69 @@ date = 2024-12-28T17:05:28+01:00
 draft = false
 +++
 
-After the ELF and Program Headers we have the section headers. This knowledge 
+After the ELF and Program Headers, we have the section headers. This knowledge 
 is, again, essential for reverse engineering, as well as malware development. 
 So without wasting any time, let's jump straight into it.
 
-## What Is A Section?
+## To Section Or To Segment?
 
-Sections are, as some guy from Stack Overflow put it, "the smallest continuous 
-regions in the file"- basically sections are a way to organize the binary 
-logically into, as the name says, sections. A few common ones are:
+Segments define how the program is loaded into memory and may contain multiple 
+sections in them. Sections on the other hand are logically ordered parts of our 
+binary, one section may contain code (`.text`/`.code`), while others contain 
+data such as our programs variables (`.data`/`.rodata`), strings (`.strtab`) or 
+even relocations (`rela.dyn`/`rela.plt`). This organisation makes it easier for 
+tools (such as Bin2Bin Obfuscator) and developers (Nerds) to modify the code.
 
-- `.text` - stores executable code
-- `.bss` - stores uninitialized data, also stand for "block starting symbol"
-- `.data` - stores, as the name says, data such as variables
-- `.rodata` - stores read only data - so.. constants
+Another thing sections contain is debug information (`.debug_<something>`) which
+as the name says is used by debugger as well as profiling tools, we won't cover 
+the format of the debug information sections since it is out of the scope of this 
+post but let's just say, without these you would be having a really bad time. 
 
-So basically with sections we divide the binary into logical parts *on disk*.
-The loader and linker use those then for various purposes. For example, the 
-linker uses them to combine multiple object files into one final binary, *HOW?* 
-By merging the sections of all the object files into one. The linker also uses
-sections to resolve symbols and resolve relocations. 
+Finally because of sections, the OS can manage memory more efficiently. For 
+example the executable code can be marked as `R*X`, while sections that don't 
+need to be executable we can just mark as read-only (`R**`).
 
-To see the sections we may execute: 
+## Linked And Loaded 
+
+We can find sections in executables, shared objects and raw object files. For 
+each file type the sections are treated a little differently by the linker and 
+loader. 
+
+But first lets clear up how sections are even used by the linker. When statically 
+linking a binary, the structure allows multiple object files to be fused together 
+into a single executable by the linker. When the binary is then loaded into 
+memory,the loader uses this information to place each section into the 
+appropriate memory region. In the case of dynamic linking, information such as 
+references to the libraries we use are stored, so that the loader can resolve 
+them during the runtime. This not only allows for more efficient memory usage 
+but also reduces redundancy.
+
+### Object Files (`.o`)
+
+As already said, the linker combines multiple object files, resolves symbols, and 
+processes relocations to create our single executable, it also merges sections 
+from different object files and generates a symbol table for the final output.
+
+### Executables (`.out`)
+
+The linker creates the executable from the object files by ensuring all symbols 
+are resolved and addresses are fixed. The sections are also organized for 
+efficient execution and of course, creates the necessary headers for our loader. 
+
+### Shared Objects (`.so`)
+
+Shared objects are processed similarly to executables, but they allow for 
+unresolved symbols, making it possible for those to be linked with other 
+executables or shared objects at runtime. It also generates a dynamic symbol 
+table for runtime linking (Also the case for executables that are position 
+independent). The loader dynamically loads shared objects only when an executable 
+requests them; the relocations and symbol resolution is then performed at runtime.
+
+So in summary the linker uses sections such as `.symtab`, `.dynsym` for symbols, 
+`.text`, `.rodata`, `data`, `.strtab` for code and data (variables), and finally 
+`.got`, `.dynamic`, `.rela.*` for relocations and other stuffs.
+
+To display all the sections in a select binary may execute: 
 
 ```bash
 [deluks@baltazar ~]$ readelf -S <FILE>
@@ -45,57 +86,19 @@ Section Headers:
 <----------------------------- SNIP ---------------------------->
 ```
 
-NOTE: Command output slightly modified to not have the horizontal scrollbar.
-
 Now there is a hell of a lot going on here but it will all make sense (I hope) 
 shortly. For now lets just take note of the names `.interp`, 
-`.note.gnu.pr[...]` and `.note.gnu.bu[...]` those, my friend,  are sections.
+`.note.gnu.pr[...]` and `.note.gnu.bu[...]` those, my friend, are sections.
 By now you may be asking yourself, "how does `readelf` then know what a section is
 and where its located???", and the simple answer to that is "Section Headers".
 
-## What Is A Section Header?
+## Section Header?
 
 Each section has its own section header, and a section header is a data 
 structure in an ELF binary that contains information about a section in 
 the binary. We will take a look at the exact structure in a minute but 
 essentially it holds info such as permissions, size, offsets, etc.
 But let's first take a look how to find them.
-
-### How Do We Find The Section Headers?
-
-We may find the section headers by reading the `e_shoff` member of the ELF 
-header. Since there are of course more than one sections in a binary, we 
-also have the members:
-
-- `e_shentsize` holding the size of the section header entry.
-- `e_shnum` holding the number of the sections in the binary. 
-- `e_shstrndx` holding the index of the section header table that contains the sections names.
-
-```c
-typedef struct {
-    unsigned char e_ident[16];
-    uint16_t      e_type;
-    uint16_t      e_machine;
-    uint32_t      e_version;
-    ElfN_Addr     e_entry;
-    ElfN_Off      e_phoff;
-    ElfN_Off      e_shoff;     // <-- offset to first section_hdr entry
-    uint32_t      e_flags;
-    uint16_t      e_ehsize;
-    uint16_t      e_phentsize;
-    uint16_t      e_phnum;
-    uint16_t      e_shentsize; // <-- size of section_hdr entry
-    uint16_t      e_shnum;     // <-- no. of sections
-    uint16_t      e_shstrndx;  // <-- names
-} ElfN_Ehdr;
-```
-
-Now, basically all we have to do is get the offset and cast it to this very 
-cool structure called `ElfN_Shdr`, where `N` is either "32" or "64" depending
-on if we are on a 32-bit or a 64-bit system respectively. (For this blog post 
-we are taking a look at the 64-bit version.)
-
-### How Is The Structure Defined?
 
 Taking a look at the definition of the structure, we see the following:
 
@@ -159,12 +162,39 @@ section, both depend on the exact type of the section. Finally we have
 `sh_addralign` and `sh_entsize` that contain the required alignment for the 
 section and the entry size of an section assuming it contains fixed-size entries.
 
-### What Is The Difference Between A Segment And A Section?
+### Finding The Criminal By Looking At Clues
 
-Simply put, sections are used for organization and contain specific data types 
-used by the linker. On the other hand segments define how the program is loaded 
-into memory and  may contain multiple sections. For example a segment may
-contain both the .text and .data section.
+We may find the section headers by reading the `e_shoff` member of the ELF 
+header. Since there are of course more than one sections in a binary, we 
+also have the members:
+
+- `e_shentsize` holding the size of the section header entry.
+- `e_shnum` holding the number of the sections in the binary. 
+- `e_shstrndx` holding the index of the section header table that contains the sections names.
+
+```c
+typedef struct {
+    unsigned char e_ident[16];
+    uint16_t      e_type;
+    uint16_t      e_machine;
+    uint32_t      e_version;
+    ElfN_Addr     e_entry;
+    ElfN_Off      e_phoff;
+    ElfN_Off      e_shoff;     // <-- offset to first section_hdr entry
+    uint32_t      e_flags;
+    uint16_t      e_ehsize;
+    uint16_t      e_phentsize;
+    uint16_t      e_phnum;
+    uint16_t      e_shentsize; // <-- size of section_hdr entry
+    uint16_t      e_shnum;     // <-- no. of sections
+    uint16_t      e_shstrndx;  // <-- names
+} ElfN_Ehdr;
+```
+
+Now, basically all we have to do is get the offset and cast it to this very 
+cool structure called `ElfN_Shdr`, where `N` is either "32" or "64" depending
+on if we are on a 32-bit or a 64-bit system respectively. (For this blog post 
+we are talking a look at the 64-bit version.)
 
 Now coming back to this, the mess makes a bunch more sense, sure the formatting
 of the output is a little weird but we see all the members of the `ElfN_Shdr`
@@ -192,7 +222,7 @@ Section Headers:
 
 That's all for today folks, I hope you learned something new about ELFs and also 
 hope I did not bore you too much! The next part covers the ELF symbols so stay 
-tuned.
+tuned. Huge thanks to bextr
 
 ### Assignment
 
