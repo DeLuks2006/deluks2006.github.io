@@ -13,18 +13,15 @@ So without wasting any time, let's jump straight into it.
 Segments define how the program is loaded into memory and may contain multiple 
 sections in them. Sections on the other hand are logically ordered parts of our 
 binary, one section may contain code (`.text`/`.code`), while others contain 
-data such as our programs variables (`.data`/`.rodata`), strings (`.strtab`) or 
-even relocations (`rela.dyn`/`rela.plt`). This organisation makes it easier for 
-tools (such as Bin2Bin Obfuscator) and developers (Nerds) to modify the code.
+data such as our programs static and global variables (`.data`/`.rodata`), 
+strings (`.strtab`) or even relocations (`rela.dyn`/`rela.plt`). This 
+organisation makes it easier for tools (such as Bin2Bin Obfuscator) and 
+developers (Nerds) to modify the code.
 
 Another thing sections contain is debug information (`.debug_<something>`) which
 as the name says is used by debugger as well as profiling tools, we won't cover 
 the format of the debug information sections since it is out of the scope of this 
 post but let's just say, without these you would be having a really bad time. 
-
-Finally because of sections, the OS can manage memory more efficiently. For 
-example the executable code can be marked as `R*X`, while sections that don't 
-need to be executable we can just mark as read-only (`R**`).
 
 ## Linked And Loaded 
 
@@ -35,11 +32,11 @@ loader.
 But first lets clear up how sections are even used by the linker. When statically 
 linking a binary, the structure allows multiple object files to be fused together 
 into a single executable by the linker. When the binary is then loaded into 
-memory,the loader uses this information to place each section into the 
-appropriate memory region. In the case of dynamic linking, information such as 
-references to the libraries we use are stored, so that the loader can resolve 
-them during the runtime. This not only allows for more efficient memory usage 
-but also reduces redundancy.
+memory, the loader uses this information to place each segment (and thus each 
+section) into the appropriate memory region. In the case of dynamic linking, 
+information such as references to the libraries we use are stored, so that the 
+loader can resolve them during the runtime. This not only allows for more 
+efficient memory usage but also reduces redundancy.
 
 ### Object Files (`.o`)
 
@@ -222,7 +219,7 @@ Section Headers:
 
 That's all for today folks, I hope you learned something new about ELFs and also 
 hope I did not bore you too much! The next part covers the ELF symbols so stay 
-tuned. Huge thanks to [bextr](https://x.com/_vrzh) for the feedback while writing 
+tuned. Huge thanks to [vrzh](https://x.com/_vrzh) for the feedback while writing 
 this post.
 
 ### Assignment
