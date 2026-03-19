@@ -7,17 +7,17 @@ While browsing the OA-Labs Discord Server, I stumbled upon a few hashes being sh
 
 ![](./_assets/almond_rat/vt.png)
 
-Further research led me to finding the sample on [MalwareBazaar](https://bazaar.abuse.ch/sample/55901c2d5489d6ac5a0671971d29a31f4cdfa2e03d56e18c1585d78547a26396/), the Tags labeled the sample as “AlmondRAT” and related to the group “Bitter”. Due to past experience of the samples being wrongly labeled on MalwareBazaar, I researched further and sure enough, I found the samples hash in the article linked [here](https://www.threatray.com/blog/the-bitter-end-unraveling-eight-years-of-espionage-antics-part-two).   
+Further research led me to finding the sample on [MalwareBazaar](https://bazaar.abuse.ch/sample/55901c2d5489d6ac5a0671971d29a31f4cdfa2e03d56e18c1585d78547a26396/), the Tags labeled the sample as “AlmondRAT” and related to the group “Bitter”. Due to past experience of the samples being wrongly labeled on MalwareBazaar, I researched further and sure enough, I found the samples hash in the article linked [here](https://www.threatray.com/blog/the-bitter-end-unraveling-eight-years-of-espionage-antics-part-two).  
 ![](./_assets/almond_rat/report.png)
 
 However, after confirming that the sample is indeed AlmondRAT, I did not read the article due to me still wanting to reverse engineer the sample myself.
 
 Having that out of the way, I opened the sample in DnSpyEx, and found the file was originally called “stdrcl.exe” and consists of one namespace with a matching name. The namespace consists of the following five classes:
 
-- CipherText  
-- CommWithServer  
-- Program  
-- StateObject  
+- CipherText
+- CommWithServer
+- Program
+- StateObject
 - SystemAttribute
 
 If we open the Program class, we quickly find that the strings are encrypted with a method from the class “CipherText”, this class consists of only one method called “Decrypt(string cipherText)”, since it uses only standard system namespaces, we can easily copy out the decryption method and use it to decrypt the strings. Due to the fact that there were not many strings, I decided to decrypt each string one-by-one. After that was done, I proceeded with reverse engineering the Program class.
@@ -32,12 +32,12 @@ The “Main” function of the program class starts off by creating a mutex with
 
 Taking a look at “StartCommWithServer”, we quickly find out it is the command handler for the communication with the C2 server. The supported commands are:
 
-- `REFRESH`  
-- `DRIVE`  
-- `DIR*`  
-- `DOWNLOAD*`  
-- `UPLOAD*`  
-- `DELETE*`  
+- `REFRESH`
+- `DRIVE`
+- `DIR*`
+- `DOWNLOAD*`
+- `UPLOAD*`
+- `DELETE*`
 - `CMD~`
 
 The exact functionality of these commands is broken down in the following sections.

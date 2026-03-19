@@ -7,52 +7,52 @@ pubDate: 2025-09-26
 
 With the rising popularity of virtual machines as an anti-analysis technique such as [VMProtect](https://vmpsoft.com/) & [Themida](https://www.oreans.com/Themida.php), more and more malware samples as well as CTF-challenges are using virtual machines with custom instruction sets to make analysis of programs harder. My friend [0xLegacyy](https://x.com/0xLegacyy) made a small CTF-challenge “TadpoleVM” for our team to practice reverse engineering virtualized targets. In this post, I will fully analyse the given binary and implement a disassembler to recover the VM’s semantics, to ultimately find the flag that satisfies the program's checks. This was my first ever VM reverse-engineering project and I learned a lot of ways to improve my approach along the way. This post is therefore a cleaned up summary of the techniques I used. :)
 
-Note: This post will not cover how virtual machines work, for that, please read the following and come back later: [https://www.jmeiners.com/lc3-vm/](https://www.jmeiners.com/lc3-vm/) 
+Note: This post will not cover how virtual machines work, for that, please read the following and come back later: [https://www.jmeiners.com/lc3-vm/](https://www.jmeiners.com/lc3-vm/)
 
 ## Static Analysis
 
-Upon executing the binary we are greeted with the following prompt:  
+Upon executing the binary we are greeted with the following prompt:
 
 ![](./_assets/tadpole/image1.png)
 
-Loading the binary in IDA we are greeted with a surprisingly small amount of functions. Going through them, I found a function which by the looks of its control flow graph, resembled a VM interpreter by its VM-dispatcher and instruction handlers therefore I later labeled the function “vm\_interpreter”. This function is the heart of the custom virtual machine, like many other VM’s, it consists of a huge switch statement that decodes the instructions of the virtualized code and modifies the virtual machines state accordingly. 
+Loading the binary in IDA we are greeted with a surprisingly small amount of functions. Going through them, I found a function which by the looks of its control flow graph, resembled a VM interpreter by its VM-dispatcher and instruction handlers therefore I later labeled the function “vm_interpreter”. This function is the heart of the custom virtual machine, like many other VM’s, it consists of a huge switch statement that decodes the instructions of the virtualized code and modifies the virtual machines state accordingly.
 
-The VM consists of 20 variable length instructions since the switch statement has only 20 cases if we don’t count the default case. The instructions that immediately stick out are VM\_OP\_EXIT, VM\_OP\_FGETS, VM\_OP\_PRINT due to their calls to EXIT(), FGETS() and PRINTF() as well as the logical operations AND, NOT, OR, XOR since these handlers perform said operations on 2 operands and store the result of those somewhere. These operations stick out especially because, not only are they common but could also be a part of the key checking logic.
+The VM consists of 20 variable length instructions since the switch statement has only 20 cases if we don’t count the default case. The instructions that immediately stick out are VM_OP_EXIT, VM_OP_FGETS, VM_OP_PRINT due to their calls to EXIT(), FGETS() and PRINTF() as well as the logical operations AND, NOT, OR, XOR since these handlers perform said operations on 2 operands and store the result of those somewhere. These operations stick out especially because, not only are they common but could also be a part of the key checking logic.
 
 ![](./_assets/tadpole/image2.png)
 
-Upon further inspection I found the instruction pointer before the switch statement since it was the only variable that was always incremented before the actual instruction is decoded & interpreted.   
+Upon further inspection I found the instruction pointer before the switch statement since it was the only variable that was always incremented before the actual instruction is decoded & interpreted.
 
 ![](./_assets/tadpole/image3.png)
 
-With the help of that discovery I managed to uncover the instructions VM\_OP\_JMP, VM\_OP\_JMP\_REG, VM\_OP\_JNZ and VM\_OP\_JE since these directly modify the instruction pointer:  
+With the help of that discovery I managed to uncover the instructions VM_OP_JMP, VM_OP_JMP_REG, VM_OP_JNZ and VM_OP_JE since these directly modify the instruction pointer:
 
 ![](./_assets/tadpole/image4.png)
 
-Due to the fact that virtual machines often save context in a structure that contains pointers to the registers, stack and memory. Based on the usage of the value following the instruction pointer, I concluded it was the stack pointer. Therefore all instructions using it are modifying the stack in some way. With that information I found the Instructions VM\_OP\_PUSH, VM\_OP\_POP, VM\_OP\_CALL and VM\_OP\_RET. For this specific virtual machine, the VM context is structured like in the image below:  
+Due to the fact that virtual machines often save context in a structure that contains pointers to the registers, stack and memory. Based on the usage of the value following the instruction pointer, I concluded it was the stack pointer. Therefore all instructions using it are modifying the stack in some way. With that information I found the Instructions VM_OP_PUSH, VM_OP_POP, VM_OP_CALL and VM_OP_RET. For this specific virtual machine, the VM context is structured like in the image below:
 
 ![](./_assets/tadpole/image5.png)
 
-With the instruction pointer and stack structures discovered, the behaviour of the remaining opcodes is easily understood, therefore I moved on to the other functions of the binary. Starting with the main function, it first creates an object of the VM-context structure and clears its contents.   
+With the instruction pointer and stack structures discovered, the behaviour of the remaining opcodes is easily understood, therefore I moved on to the other functions of the binary. Starting with the main function, it first creates an object of the VM-context structure and clears its contents.
 
 ![](./_assets/tadpole/image6.png)
 
-Then an array in the local scope of the function is populated with the content of the memory region starting at “0x130003270”, upon inspection, it consists of the bytes 4, 2, 0 followed by 8 characters of a string and then the bytes 5, 1, 2, after some debugging I found that this memory region is the virtualized code, the bytes “04 02 00 \<string\>” copy the first 8 bytes of a string into the second register in our register array.  
+Then an array in the local scope of the function is populated with the content of the memory region starting at “0x130003270”, upon inspection, it consists of the bytes 4, 2, 0 followed by 8 characters of a string and then the bytes 5, 1, 2, after some debugging I found that this memory region is the virtualized code, the bytes “04 02 00 \<string\>” copy the first 8 bytes of a string into the second register in our register array.
 
 ![](./_assets/tadpole/image7.png)
 
-Next, in the “vm\_init” function, the virtualized code is copied into memory of the VM-context structure, the instruction pointer is set to 0x38D and the stack pointer is set to 0\. Finally it calls the “vm\_enter” function, which starts an infinite loop that executes a single opcode at a time using the “vm\_interpreter” function.
+Next, in the “vm_init” function, the virtualized code is copied into memory of the VM-context structure, the instruction pointer is set to 0x38D and the stack pointer is set to 0\. Finally it calls the “vm_enter” function, which starts an infinite loop that executes a single opcode at a time using the “vm_interpreter” function.
 
 ## Analysis of the Virtualized Code
 
-Dumping the virtualized code was pretty straight forward because of the previously reversed “vm\_init” function. Running the binary in the debugger I located the VM-Interpreter and then in the dispatcher I encountered the following code:
+Dumping the virtualized code was pretty straight forward because of the previously reversed “vm_init” function. Running the binary in the debugger I located the VM-Interpreter and then in the dispatcher I encountered the following code:
 
 ```asm
 push    rdi
 sub     rsp, 20h
 mov     rax, [rcx]                  ; PC
-mov     rdi, rcx                    ; VM_CTX ptr  
-movzx   edx, byte ptr [rax+rcx+50h] ; Instruction 
+mov     rdi, rcx                    ; VM_CTX ptr
+movzx   edx, byte ptr [rax+rcx+50h] ; Instruction
 lea     r8, [rax+1]                 ; <- Breakpoint
 mov     [rcx], r8
 cmp     edx, 13h        ; switch 20 cases
@@ -60,9 +60,9 @@ cmp     edx, 13h        ; switch 20 cases
 
 After putting a breakpoint on the LEA instruction and following the RAX+RCX+0x50 in the memory dump, I found the entry of the virtualized code. Then I calculated the base address by subtracting the current address of the code with the offset to the entry point. Taking note of that, I scrolled a little bit up in the dump and found the end of the code. Having both the start and the end of the virtualized code, I dumped it to a file and started working on a disassembler.
 
-![Red \= Entry; Orange \= 1st Instruction of Start/End](./_assets/tadpole/image8.png)
+![Red = Entry; Orange = 1st Instruction of Start/End](./_assets/tadpole/image8.png)
 
-After a few days of writing the disassembler while being dead tired, making stupid mistakes, and starting over a few times — I managed to write one without errors, which can be found here: [https://github.com/DeLuks2006/BullFrog](https://github.com/DeLuks2006/BullFrog) 
+After a few days of writing the disassembler while being dead tired, making stupid mistakes, and starting over a few times — I managed to write one without errors, which can be found here: [https://github.com/DeLuks2006/BullFrog](https://github.com/DeLuks2006/BullFrog)
 
 Upon running the disassembler, I proceeded to clean up the output manually, ending up with the following:
 
@@ -126,20 +126,21 @@ $$
 $$
 
 Finally, this formula can be implemented in Python as follows, producing the expected input:
+
 ```python
-def decode_flag():  
+def decode_flag():
     key_chunks = [
-        0x9a902db193903cac,  
-        0x9a9011b0809e3cad,  
-        0x9d9911b881903795,  
-        0x89de23bcab8b3db8,  
+        0x9a902db193903cac,
+        0x9a9011b0809e3cad,
+        0x9d9911b881903795,
+        0x89de23bcab8b3db8,
     ]
 
     R2 = (0x0b00b07af9a51020 + 0x0ba115ba115) & ((1 << 64) - 1)
 
-    flag_bytes = b""  
+    flag_bytes = b""
     for key in key_chunks:
-        chunk = ((~key) & ((1 << 64) - 1)) ^ R2  
+        chunk = ((~key) & ((1 << 64) - 1)) ^ R2
         flag_bytes += chunk.to_bytes(8, "little")
 
     return flag_bytes.decode("ascii")
@@ -149,7 +150,6 @@ def decode_flag():
 
 This concludes my first attempt at reverse engineering a virtual machine with a custom instruction set, it was a really fun and educational challenge, which made me develop a better approach to reversing virtual machines. I hope you, the reader, enjoyed this rather short blog post and maybe learned something new. Finally I’d like to thank a couple of people that helped me during the reverse engineering process of the binary and during the making of this post:
 
-- [0xLegacyy](https://x.com/0xLegacyy) \- Hints while reversing the binary  
-- [Darbonzo](https://bsky.app/profile/darbonzo.bsky.social) \- Help while creating the disassembler & grammar police  
+- [0xLegacyy](https://x.com/0xLegacyy) \- Hints while reversing the binary
+- [Darbonzo](https://bsky.app/profile/darbonzo.bsky.social) \- Help while creating the disassembler & grammar police
 - [Ihor](https://x.com/glitchingcore) & [tmpvec](https://x.com/tmpvec) \- General feedback about the post
-
