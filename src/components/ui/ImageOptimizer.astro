@@ -1,0 +1,21 @@
+<script is:inline>
+  // Global handler: Automatically remove the img-placeholder class after images are loaded
+  function removeImgPlaceholder() {
+    document.querySelectorAll('img.img-placeholder').forEach(function (img) {
+      if (img.complete) {
+        img.classList.remove('img-placeholder')
+      } else {
+        // Skip if already bound
+        if (img.dataset.placeholderBound) return
+        img.dataset.placeholderBound = 'true'
+
+        img.addEventListener('load', function () {
+          img.classList.remove('img-placeholder')
+        })
+      }
+    })
+  }
+
+  // Use only astro:page-load as it fires on initial load and navigation
+  document.addEventListener('astro:page-load', removeImgPlaceholder)
+</script>

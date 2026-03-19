@@ -1,0 +1,379 @@
+<script is:inline>
+  function loadNeoDBCards() {
+    const allContainers = document.querySelectorAll('.neodb-card-container')
+
+    allContainers.forEach((container) => {
+      if (!container.hasAttribute('data-url')) {
+        container.remove()
+      }
+    })
+
+    const containers = document.querySelectorAll('.neodb-card-container[data-url]')
+
+    if (containers.length === 0) {
+      return
+    }
+
+    const renderError = (elem) => {
+      elem.innerHTML = `<div class="neodb-card error"><p class="neodb-error">🔴&nbsp;&nbsp;Error</p></div>`
+    }
+
+    const renderCard = (elem, data, targetUrl) => {
+      const itemRating = data?.rating && data.rating > 0 ? parseFloat(data.rating) : null
+      const coverUrl = data.cover_image_url || data.cover_url
+      const category = data.category || ''
+
+      const getPreferredTitle = () => {
+        // Special handling for music/album types only
+        if (category === 'music' || category === 'album') {
+          if (Array.isArray(data.localized_title)) {
+            const nonZh = data.localized_title.find((t) => t.lang !== 'zh-cn' && t.text)
+            if (nonZh) return nonZh.text
+            const zh = data.localized_title.find((t) => t.lang === 'zh-cn' && t.text)
+            if (zh) return zh.text
+          }
+        }
+        return data.title || data.name || ''
+      }
+
+      const title = getPreferredTitle()
+
+      const isSquare = category === 'music' || category === 'podcast'
+      const coverClass = isSquare ? 'music' : 'other'
+      const cardHeightClass = isSquare ? 'compact' : 'standard'
+
+      // Convert rating to star percentage with half-star precision: 10 points = 100% (5 stars)
+      const starPercentage = itemRating !== null ? Math.round((itemRating / 10) * 10) * 10 : null
+
+      // Build field info
+      const fieldInfo = []
+
+      if (category === 'movie' || category === 'tv' || category === 'tv/season') {
+        // Movie/TV: Director, Cast, Genre, Release Year
+        if (data.director && data.director.length > 0) {
+          const directors = Array.isArray(data.director) ? data.director.join(', ') : data.director
+          fieldInfo.push(`导演: ${directors}`)
+        }
+        if (data.actor && data.actor.length > 0) {
+          const actors = Array.isArray(data.actor) ? data.actor.join(', ') : data.actor
+          fieldInfo.push(`演员: ${actors}`)
+        }
+        if (data.genre && data.genre.length > 0) {
+          const genres = Array.isArray(data.genre) ? data.genre.join(', ') : data.genre
+          fieldInfo.push(`类型: ${genres}`)
+        }
+        // Add release year - "Release Date" for movies, "Premiere" for TV
+        if (data.year) {
+          const timeLabel = category === 'movie' ? '上映时间' : '首播'
+          fieldInfo.push(`${timeLabel}: ${data.year}`)
+        }
+      } else if (category === 'music' || category === 'album') {
+        // Music: Artist, Genre, Release Date
+        if (data.artist && data.artist.length > 0) {
+          // Only show the first artist for music/album
+          const artist = Array.isArray(data.artist) ? data.artist[0] : data.artist
+          fieldInfo.push(`艺术家: ${artist}`)
+        }
+        if (data.genre && data.genre.length > 0) {
+          const genres = Array.isArray(data.genre) ? data.genre.join(', ') : data.genre
+          fieldInfo.push(`流派: ${genres}`)
+        }
+        if (data.release_date) {
+          fieldInfo.push(`发行时间: ${data.release_date}`)
+        }
+      } else if (category === 'book') {
+        // Book: Author, Publisher
+        if (data.author && data.author.length > 0) {
+          const authors = Array.isArray(data.author) ? data.author.join(', ') : data.author
+          fieldInfo.push(`作者: ${authors}`)
+        }
+        // Check multiple possible publisher fields
+        const publisher = data.publisher || data.pub_house || data.company
+        if (publisher && (Array.isArray(publisher) ? publisher.length > 0 : publisher)) {
+          const publishers = Array.isArray(publisher) ? publisher.join(', ') : publisher
+          fieldInfo.push(`出版社: ${publishers}`)
+        }
+      } else if (category === 'game') {
+        // Game: Developer, Genre, Release Date
+        if (data.developer && data.developer.length > 0) {
+          const developers = Array.isArray(data.developer) ? data.developer.join(', ') : data.developer
+          fieldInfo.push(`开发者: ${developers}`)
+        }
+        if (data.genre && data.genre.length > 0) {
+          const genres = Array.isArray(data.genre) ? data.genre.join(', ') : data.genre
+          fieldInfo.push(`类型: ${genres}`)
+        }
+        if (data.release_date) {
+          fieldInfo.push(`发行时间: ${data.release_date}`)
+        }
+      } else if (category === 'podcast') {
+        // Podcast: Host, Genre
+        const host = data.host || data.artist || data.creator
+        if (host && (Array.isArray(host) ? host.length > 0 : host)) {
+          const hosts = Array.isArray(host) ? host.join(', ') : host
+          fieldInfo.push(`主播: ${hosts}`)
+        }
+        if (data.genre && data.genre.length > 0) {
+          const genres = Array.isArray(data.genre) ? data.genre.join(', ') : data.genre
+          fieldInfo.push(`类型: ${genres}`)
+        }
+      }
+
+      elem.innerHTML = `
+        <a class="neodb-card ${cardHeightClass}" href="${targetUrl}" target="_blank" rel="noopener noreferrer">
+          ${coverUrl ? `<img class="neodb-cover ${coverClass}" src="${coverUrl}" alt="${title || ''}" loading="lazy" />` : `<div class="neodb-cover ${coverClass}" style="background: #f3f4f6;"></div>`}
+          <div class="neodb-info">
+            <div class="neodb-title">${title || ''}</div>
+            ${
+              starPercentage !== null
+                ? `<div class="rating">
+              <span class="allstarbg">
+                <span class="allstarfg" style="width:${starPercentage}%"></span>
+              </span>
+              <span class="rating_nums">${itemRating.toFixed(1)}</span>
+            </div>`
+                : `<div class="rating">
+              <span class="allstargray"></span>
+            </div>`
+            }
+            ${fieldInfo
+              .map((info) => {
+                if (info.startsWith('<div class="neodb-desc">')) {
+                  return info
+                }
+                return `<div class="neodb-field">${info}</div>`
+              })
+              .join('')}
+          </div>
+        </a>
+      `
+    }
+
+    // Build fetch promises for parallel execution
+    const fetchPromises = Array.from(containers).map(async (container) => {
+      const url = container.getAttribute('data-url')
+
+      if (!url) return
+
+      let fetchUrl = ''
+      const neodbUrlPattern = /neodb\.social\/(movie|book|music|album|game|tv\/season|tv|podcast)\/([\w-]+)/
+      const isNeoDbUrl = neodbUrlPattern.test(url)
+
+      if (isNeoDbUrl) {
+        const match = url.match(neodbUrlPattern)
+        let category = match ? match[1] : ''
+        const uuid = match ? match[2] : ''
+
+        if (category === 'tv/season') {
+          category = 'tv/season'
+        }
+
+        if (uuid && category) {
+          fetchUrl = `https://neodb.social/api/${category}/${uuid}`
+        }
+      } else {
+        fetchUrl = `https://neodb.social/api/catalog/fetch?url=${encodeURIComponent(url)}`
+      }
+
+      if (fetchUrl) {
+        try {
+          const res = await fetch(fetchUrl, {
+            mode: 'cors',
+            headers: {
+              Accept: 'application/json'
+            }
+          })
+          if (!res.ok) throw new Error(`Response ${res.status}`)
+          const json = await res.json()
+          const data = json.data ? json.data : json
+          renderCard(container, data, url)
+        } catch {
+          renderError(container)
+        }
+      } else {
+        renderError(container)
+      }
+    })
+
+    // Execute all fetches in parallel
+    Promise.allSettled(fetchPromises)
+  }
+
+  loadNeoDBCards()
+  document.addEventListener('astro:page-load', loadNeoDBCards)
+</script>
+
+<style is:inline>
+  .prose .neodb-card {
+    width: 100%;
+    height: 100%;
+    background: var(--astro-code-background);
+    color: var(--text-primary);
+    border-radius: 8px;
+    display: flex;
+    position: relative;
+    text-decoration: none !important;
+    transition: background 0.2s ease-out;
+    margin: 1.25rem 0 1.75rem 0;
+    overflow: hidden;
+  }
+
+  .prose .neodb-card.compact {
+    min-height: 6rem;
+  }
+
+  .prose .neodb-card.standard {
+    min-height: 9rem;
+  }
+
+  .prose .neodb-card:hover {
+    background: color-mix(in srgb, var(--selection) 75%, transparent);
+  }
+
+  .prose .neodb-card.error:hover {
+    background: var(--astro-code-background) !important;
+    cursor: default;
+  }
+
+  .prose .neodb-cover {
+    width: 96px !important;
+    border-radius: 6px;
+    margin: 1rem;
+  }
+
+  .prose .neodb-cover.music {
+    height: 96px !important; /* 1:1 for music */
+  }
+
+  .prose .neodb-cover.other {
+    height: 144px !important; /* 9:16 for other types */
+  }
+
+  .prose .neodb-info {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    margin: 1rem 1rem 1rem 0;
+  }
+
+  .prose .neodb-field {
+    font-size: var(--font-size-s);
+    color: var(--text-primary);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .prose .neodb-artist {
+    font-size: var(--font-size-s);
+    color: var(--text-primary);
+  }
+
+  .prose .no-rating {
+    font-size: var(--font-size-s);
+    color: var(--text-primary);
+    line-height: 1;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .prose .neodb-title {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-bold);
+    line-height: 1.35;
+    margin-bottom: 0.125rem;
+  }
+
+  .prose .neodb-title a {
+    text-decoration: none !important;
+  }
+
+  .prose .neodb-desc {
+    font-size: var(--font-size-s);
+    color: var(--text-primary);
+    margin-top: 0.25rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    word-wrap: break-word;
+    max-width: 100%;
+  }
+
+  .prose .rating {
+    margin: 0 0 0.25rem 0;
+    font-size: var(--font-size-s);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .prose .rating .allstarbg {
+    position: relative;
+    color: #f99b01;
+    height: 1rem;
+    width: 5rem;
+    background-size: auto 100%;
+    margin-right: 0.25rem;
+    background-repeat: repeat;
+    background-image: url(data:image/svg+xml;base64,PHN2ZyBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzIiIGhlaWdodD0iMzIiPjxwYXRoIGQ9Ik05MDguMSAzNTMuMWwtMjUzLjktMzYuOUw1NDAuNyA4Ni4xYy0zLjEtNi4zLTguMi0xMS40LTE0LjUtMTQuNS0xNS44LTcuOC0zNS0xLjMtNDIuOSAxNC41TDM2OS44IDMxNi4ybC0yNTMuOSAzNi45Yy03IDEtMTMuNCA0LjMtMTguMyA5LjMtMTIuMyAxMi43LTEyLjEgMzIuOS42IDQ1LjNsMTgzLjcgMTc5LjEtNDMuNCAyNTIuOWMtMS4yIDYuOS0uMSAxNC4xIDMuMiAyMC4zIDguMiAxNS42IDI3LjYgMjEuNyA0My4yIDEzLjRMNTEyIDc1NGwyMjcuMSAxMTkuNGM2LjIgMy4zIDEzLjQgNC40IDIwLjMgMy4yIDE3LjQtMyAyOS4xLTE5LjUgMjYuMS0zNi45bC00My40LTI1Mi45IDE4My43LTE3OS4xYzUtNC45IDguMy0xMS4zIDkuMy0xOC4zIDIuNy0xNy41LTkuNS0zMy43LTI3LTM2LjN6TTY2NC44IDU2MS42bDM2LjEgMjEwLjNMNTEyIDY3Mi43IDMyMy4xIDc3MmwzNi4xLTIxMC4zLTE1Mi44LTE0OUw0MTcuNiAzODIgNTEyIDE5MC43IDYwNi40IDM4MmwyMTEuMiAzMC43LTE1Mi44IDE0OC45eiIgZmlsbD0iI2Y5OWIwMSIvPjwvc3ZnPg==);
+  }
+
+  .prose .rating .allstarfg {
+    position: absolute;
+    left: 0;
+    color: #f99b01;
+    height: 1rem;
+    overflow: hidden;
+    background-size: auto 100%;
+    background-repeat: repeat;
+    background-image: url(data:image/svg+xml;base64,PHN2ZyBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzIiIGhlaWdodD0iMzIiPjxwYXRoIGQ9Ik05MDguMSAzNTMuMWwtMjUzLjktMzYuOUw1NDAuNyA4Ni4xYy0zLjEtNi4zLTguMi0xMS40LTE0LjUtMTQuNS0xNS44LTcuOC0zNS0xLjMtNDIuOSAxNC41TDM2OS44IDMxNi4ybC0yNTMuOSAzNi45Yy03IDEtMTMuNCA0LjMtMTguMyA5LjMtMTIuMyAxMi43LTEyLjEgMzIuOS42IDQ1LjNsMTgzLjcgMTc5LjEtNDMuNCAyNTIuOWMtMS4yIDYuOS0uMSAxNC4xIDMuMiAyMC4zIDguMiAxNS42IDI3LjYgMjEuNyA0My4yIDEzLjRMNTEyIDc1NGwyMjcuMSAxMTkuNGM2LjIgMy4zIDEzLjQgNC40IDIwLjMgMy4yIDE3LjQtMyAyOS4xLTE5LjUgMjYuMS0zNi45bC00My40LTI1Mi45IDE4My43LTE3OS4xYzUtNC45IDguMy0xMS4zIDkuMy0xOC4zIDIuNy0xNy41LTkuNS0zMy43LTI3LTM2LjN6IiBmaWxsPSIjZjk5YjAxIi8+PC9zdmc+);
+  }
+
+  .prose .rating_nums {
+    font-size: var(--font-size-s);
+    color: var(--text-primary);
+  }
+
+  .prose .rating .allstargray {
+    position: relative;
+    height: 1rem;
+    width: 5rem;
+    margin-right: 8px;
+    background-color: var(--text-primary);
+    opacity: 0.15;
+    -webkit-mask-image: url(data:image/svg+xml;base64,PHN2ZyBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzIiIGhlaWdodD0iMzIiPjxwYXRoIGQ9Ik05MDguMSAzNTMuMWwtMjUzLjktMzYuOUw1NDAuNyA4Ni4xYy0zLjEtNi4zLTguMi0xMS40LTE0LjUtMTQuNS0xNS44LTcuOC0zNS0xLjMtNDIuOSAxNC41TDM2OS44IDMxNi4ybC0yNTMuOSAzNi45Yy03IDEtMTMuNCA0LjMtMTguMyA5LjMtMTIuMyAxMi43LTEyLjEgMzIuOS42IDQ1LjNsMTgzLjcgMTc5LjEtNDMuNCAyNTIuOWMtMS4yIDYuOS0uMSAxNC4xIDMuMiAyMC4zIDguMiAxNS42IDI3LjYgMjEuNyA0My4yIDEzLjRMNTEyIDc1NGwyMjcuMSAxMTkuNGM2LjIgMy4zIDEzLjQgNC40IDIwLjMgMy4yIDE3LjQtMyAyOS4xLTE5LjUgMjYuMS0zNi45bC00My40LTI1Mi45IDE4My43LTE3OS4xYzUtNC45IDguMy0xMS4zIDkuMy0xOC4zIDIuNy0xNy41LTkuNS0zMy43LTI3LTM2LjN6IiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+);
+    mask-image: url(data:image/svg+xml;base64,PHN2ZyBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzIiIGhlaWdodD0iMzIiPjxwYXRoIGQ9Ik05MDguMSAzNTMuMWwtMjUzLjktMzYuOUw1NDAuNyA4Ni4xYy0zLjEtNi4zLTguMi0xMS40LTE0LjUtMTQuNS0xNS44LTcuOC0zNS0xLjMtNDIuOSAxNC41TDM2OS44IDMxNi4ybC0yNTMuOSAzNi45Yy03IDEtMTMuNCA0LjMtMTguMyA5LjMtMTIuMyAxMi43LTEyLjEgMzIuOS42IDQ1LjNsMTgzLjcgMTc5LjEtNDMuNCAyNTIuOWMtMS4yIDYuOS0uMSAxNC4xIDMuMiAyMC4zIDguMiAxNS42IDI3LjYgMjEuNyA0My4yIDEzLjRMNTEyIDc1NGwyMjcuMSAxMTkuNGM2LjIgMy4zIDEzLjQgNC40IDIwLjMgMy4yIDE3LjQtMyAyOS4xLTE5LjUgMjYuMS0zNi45bC00My40LTI1Mi45IDE4My43LTE3OS4xYzUtNC45IDguMy0xMS4zIDkuMy0xOC4zIDIuNy0xNy41LTkuNS0zMy43LTI3LTM2LjN6IiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+);
+    -webkit-mask-size: auto 100%;
+    mask-size: auto 100%;
+    -webkit-mask-repeat: repeat;
+    mask-repeat: repeat;
+  }
+
+  /* Skeleton/Loading card styles */
+  .prose .neodb-loading.music {
+    min-height: 8rem !important;
+    background: var(--astro-code-background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .prose .neodb-loading.other {
+    min-height: 11rem !important;
+    background: var(--astro-code-background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .prose .neodb-error {
+    font-size: var(--font-size-m);
+    margin: 1.5rem;
+  }
+</style>

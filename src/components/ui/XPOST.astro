@@ -1,0 +1,52 @@
+<script>
+  function loadXCards() {
+    const xCards = document.querySelectorAll('.twitter-tweet')
+    if (xCards.length === 0) return
+
+    if (document.querySelector('script[src*="platform.twitter.com/widgets.js"]')) {
+      return
+    }
+
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    xCards.forEach((element) => {
+      element.setAttribute('data-theme', isDark ? 'dark' : 'light')
+    })
+
+    // Defer loading of Twitter script to avoid blocking main thread
+    const loadTwitterScript = () => {
+      const script = document.createElement('script')
+      script.src = 'https://platform.twitter.com/widgets.js'
+      script.async = true
+      document.head.appendChild(script)
+    }
+
+    // Use requestIdleCallback if available, otherwise use setTimeout
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(loadTwitterScript, { timeout: 2000 })
+    } else {
+      setTimeout(loadTwitterScript, 100)
+    }
+  }
+
+  // Use only astro:page-load as it fires on initial load and navigation
+  document.addEventListener('astro:page-load', loadXCards)
+</script>
+
+<style is:inline>
+  .prose .x-card {
+    width: 100%;
+    margin: 1em auto;
+    text-align: center;
+  }
+
+  .prose .x-card > * {
+    display: inline-block;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .prose .x-card iframe {
+    max-width: 100%;
+    width: auto;
+  }
+</style>

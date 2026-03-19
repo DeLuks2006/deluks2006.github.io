@@ -1,0 +1,75 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    assignees:
+      - 'the3ash'
+    commit-message:
+      prefix: 'deps'
+      prefix-development: 'dev'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+    groups:
+      # Astro framework
+      astro:
+        patterns: ['astro', '@astrojs/*', 'astro-*']
+        update-types: ['minor', 'patch']
+      # Markdown/MDX ecosystem
+      markdown:
+        patterns: ['markdown-it', '@types/markdown-it', 'mdast-*', 'remark-*', 'rehype-*', 'unist-*']
+        update-types: ['minor', 'patch']
+      # Code quality tools
+      eslint:
+        patterns: ['eslint', 'eslint-*', '@eslint/*', '@typescript-eslint/*']
+        update-types: ['minor', 'patch']
+      prettier:
+        patterns: ['prettier', 'prettier-*', 'eslint-config-prettier']
+        update-types: ['minor', 'patch']
+      # TypeScript
+      typescript:
+        patterns: ['typescript', '@types/*']
+        exclude-patterns: ['@types/markdown-it']
+        update-types: ['minor', 'patch']
+      # Build and utility tools
+      build-deps:
+        patterns: ['tsx', 'sharp', '@playform/*', 'canvaskit-wasm']
+        update-types: ['minor', 'patch']
+      # Other dependencies
+      other-deps:
+        patterns: ['*']
+        exclude-patterns:
+          - 'astro*'
+          - '@astrojs/*'
+          - 'markdown-it*'
+          - '@types/markdown-it'
+          - 'mdast-*'
+          - 'remark-*'
+          - 'rehype-*'
+          - 'unist-*'
+          - 'eslint*'
+          - '@eslint/*'
+          - 'typescript*'
+          - '@types/*'
+          - 'prettier*'
+          - 'tsx'
+          - 'sharp'
+          - '@playform/*'
+          - 'canvaskit-wasm'
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    assignees:
+      - 'the3ash'
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
+    labels:
+      - 'dependencies'
