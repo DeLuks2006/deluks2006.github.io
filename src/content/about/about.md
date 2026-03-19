@@ -2,15 +2,9 @@
 title: 'About'
 ---
 
-<!--
-This content will be displayed at the top of the index page.
-You can leave this empty if you don’t want to show any content.
--->
+Reverse engineering & malware analysis blog authored by yours truly, [0xdeluks](https://x.com/0xdeluks). 
 
-A static blog theme based on [Astro](https://astro.build), designed for clarity and focus.
+This space is just a place to share my thoughts about various topics such as reverse engineering, 
+malware analysis. 
 
-With a deliberately minimal design, this layout ensures your content takes center stage. It's built for flexibility, offering customization options that honor its clean and elegant aesthetic.
-
-Effortlessly share your thoughts in _a calm & dustless space._
-
-Check posts for details and view source on [GitHub](https://github.com/the3ash/astro-chiri).
+Although I am focused on tech, specifically reverse engineering, in the future there may also be posts about topics that are not related to tech at all.
