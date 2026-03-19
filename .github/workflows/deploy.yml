@@ -19,13 +19,13 @@ jobs:
       - name: Install, build, and upload website
         uses: withastro/action@v5
 
-    deploy:
-      needs: build
-      runs-on: ubuntu-latest
-      environment:
-        name: github-pages
-        url: ${{ steps.deployment.outputs.page_url }}
-      steps:
-        - name: Deploy to Github Pages
-          id: deployment
-          uses: actions/deploy-pages@v4
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
