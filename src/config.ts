@@ -4,7 +4,7 @@ export const themeConfig: ThemeConfig = {
   // SITE INFO ///////////////////////////////////////////////////////////////////////////////////////////
   site: {
     website: 'https://deluks2006.github.io/', // Site domain
-    title: '< Blog >', // Site title
+    title: 'Magic Bytes', // Site title
     author: '0xdeluks', // Author name
     description: 'Minimal blog built by Astro', // Site description
     language: 'en-US' // Default language
