@@ -24,7 +24,7 @@
     "@playform/inline": "^0.1.4",
     "astro": "^5.18.1",
     "astro-og-canvas": "^0.10.1",
-    "canvaskit-wasm": "^0.40.0",
+    "canvaskit-wasm": "^0.41.0",
     "feed": "^5.2.0",
     "katex": "^0.16.38",
     "markdown-it": "^14.1.1",
